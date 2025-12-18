@@ -11,10 +11,20 @@ from symptom_catalog import detect_danger_category, map_symptoms
 from groq_ai import parse_complaint_with_ai
 from otc_recommendation import get_otc_recommendations
 
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(
     title="YUK SEHAT – Pra-Triase Digital",
     description="Sistem Pra-triase berbasis NLU dan Aturan WHO.",
     version="1.1"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Izinkan semua akses untuk demo
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 Base.metadata.create_all(bind=engine)

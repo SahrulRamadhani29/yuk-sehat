@@ -43,7 +43,7 @@ def is_risk_group(
     if age >= 60:
         return True
 
-    if age < 5:
+    if age < 5:                                                                                                     
         return True
 
     return False
