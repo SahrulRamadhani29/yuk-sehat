@@ -21,15 +21,13 @@ def parse_complaint_with_ai(text: str) -> dict:
                 "content": (
                     "Kamu adalah asisten medis cerdas untuk pra-triase Puskesmas. "
                     "Analisis teks keluhan pasien dan ekstrak informasi berikut dalam format JSON:\n"
-                    "1. urgency_level: 'HIGH' (tanda bahaya nyata/ancaman nyawa), "
-                    "'MEDIUM' (gejala sedang/risiko), 'LOW' (gejala ringan/stabil).\n"
+                    "1. urgency_level: 'HIGH', 'MEDIUM', 'LOW'.\n"
                     "2. category: 'PERNAPASAN', 'SIRKULASI', 'PENCERNAAN', 'SARAF', atau 'UMUM'.\n"
-                    "3. extracted_duration_hours: Prediksi durasi dalam jam dari teks (misal: '2 hari' = 48). Jika tidak ada, isi 0.\n"
-                    "4. needs_follow_up: boolean (true jika ada gejala yang mencurigakan tapi butuh konfirmasi lebih lanjut).\n"
-                    "5. follow_up_questions: Daftar pertanyaan singkat (maks 2) jika ada gejala kombinasi yang berbahaya.\n"
-                    "   Contoh: Jika 'Nyeri Ulu Hati', tanya: 'Apakah Anda juga berkeringat dingin?'.\n"
-                    "6. reason: Penjelasan singkat alasan medisnya.\n\n"
-                    "Format Jawaban JSON:\n"
+                    "3. extracted_duration_hours: angka int jam.\n"
+                    "4. needs_follow_up: boolean.\n"
+                    "5. follow_up_questions: list pertanyaan.\n"
+                    "6. reason: string alasan.\n\n"
+                    "Jawab HANYA dalam JSON: "
                     "{\"urgency_level\": \"...\", \"category\": \"...\", \"extracted_duration_hours\": 0, "
                     "\"needs_follow_up\": false, \"follow_up_questions\": [], \"reason\": \"...\"}"
                 ),
@@ -44,13 +42,14 @@ def parse_complaint_with_ai(text: str) -> dict:
     )
 
     try:
-        return json.loads(completion.choices[0].message.content)
+        content = completion.choices[0].message.content
+        return json.loads(content)
     except Exception:
         return {
             "urgency_level": "LOW",
             "category": "UMUM",
             "extracted_duration_hours": 0,
-            "needs_follow_up": false,
+            "needs_follow_up": False,
             "follow_up_questions": [],
             "reason": "AI gagal memproses bahasa"
         }
