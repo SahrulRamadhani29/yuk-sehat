@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI(
     title="YUK SEHAT – Pra-Triase Digital",
     description="Sistem Pra-triase berbasis NLU dan Aturan WHO.",
-    version="1.3" # Update versi ke 1.3 untuk mendukung tipe input dinamis
+    version="1.4" # Update ke 1.4: Pre-AI Validation Logic
 )
 
 app.add_middleware(
@@ -49,7 +49,26 @@ def save_triage_log(data: TriageInput, triage_result: str, danger_sign: bool, ri
 
 @app.post("/triage", response_model=TriageResponse)
 def triage(data: TriageInput):
-    # --- 1. ANALISIS AWAL (AI & RULES) ---
+    # --- 1. VALIDASI DATA DASAR (PRE-AI) ---
+    # Memastikan Usia dan Durasi diisi sebelum melakukan analisis AI mendalam
+    # Ini mencegah input double dan meningkatkan akurasi NLU
+    pre_ai_questions = []
+    
+    if not data.age or data.age <= 0:
+        pre_ai_questions.append({"q": "Berapa usia Anda saat ini?", "type": "number"})
+    
+    if not data.duration_hours or data.duration_hours <= 0:
+        pre_ai_questions.append({"q": "Sudah berapa jam Anda merasakan keluhan ini? (Masukkan angka saja)", "type": "number"})
+
+    # Jika data dasar belum lengkap, langsung kembalikan status INCOMPLETE tanpa panggil AI
+    if pre_ai_questions:
+        return TriageResponse(
+            status="INCOMPLETE",
+            message="Mohon lengkapi data dasar berikut sebelum sistem melakukan analisis medis.",
+            follow_up_questions=pre_ai_questions
+        )
+
+    # --- 2. ANALISIS AI (PANGGIL JIKA DATA DASAR LENGKAP) ---
     rule_category = detect_danger_category(data.complaint)
     
     ai_urgency = "LOW"
@@ -61,7 +80,7 @@ def triage(data: TriageInput):
 
     if USE_AI:
         try:
-            # AI sekarang mengembalikan follow_up_questions dalam format [{"q": "...", "type": "..."}]
+            # AI sekarang menerima state yang sudah berisi Age dan Duration yang valid
             ai_res = parse_complaint_with_ai(data.complaint)
             ai_urgency = ai_res.get("urgency_level", "LOW")
             ai_category = ai_res.get("category", "UMUM")
@@ -72,25 +91,21 @@ def triage(data: TriageInput):
         except Exception:
             ai_reason = "AI sedang tidak tersedia"
 
-    # --- 2. LOGIKA VALIDASI INTERAKTIF (MODULAR) ---
-    
-    # Check jika data usia benar-benar tidak ada
-    if not data.age or data.age <= 0:
-        # Masukkan pertanyaan usia ke dalam daftar follow_up dengan tipe 'number'
-        # Agar frontend merender kotak input teks, bukan Ya/Tidak
-        follow_up_qs.insert(0, {"q": "Berapa usia Anda saat ini?", "type": "number"})
-        needs_follow_up = True
-
-    # Jika sistem membutuhkan informasi tambahan (Incomplete)
+    # --- 3. LOGIKA VALIDASI LANJUTAN (FOLLOW-UP AI) ---
+    # Jika AI mendeteksi butuh konfirmasi gejala lain (Ya/Tidak)
     if needs_follow_up and follow_up_qs:
-        return TriageResponse(
-            status="INCOMPLETE",
-            message="Sistem memerlukan informasi tambahan untuk hasil analisis yang lebih akurat.",
-            follow_up_questions=follow_up_qs # Mengirim list of objects
-        )
+        # Filter untuk memastikan AI tidak menanyakan Usia/Durasi lagi (Anti-Double)
+        filtered_qs = [q for q in follow_up_qs if "usia" not in q['q'].lower() and "lama" not in q['q'].lower()]
+        
+        if filtered_qs:
+            return TriageResponse(
+                status="INCOMPLETE",
+                message="Sistem mendeteksi gejala yang perlu perhatian khusus. Mohon jawab pertanyaan berikut.",
+                follow_up_questions=filtered_qs
+            )
 
-    # --- 3. DECISION ENGINE (Hanya jika data sudah COMPLETE) ---
-    effective_duration = data.duration_hours if data.duration_hours and data.duration_hours > 0 else ai_duration
+    # --- 4. DECISION ENGINE (COMPLETE) ---
+    effective_duration = data.duration_hours if data.duration_hours > 0 else ai_duration
     
     is_danger = bool(rule_category or ai_urgency == "HIGH" or data.danger_sign)
     risk_group = is_risk_group(data.age, data.pregnant, data.comorbidity)
@@ -102,7 +117,7 @@ def triage(data: TriageInput):
     else:
         triage_result = "HIJAU"
 
-    # --- 4. OUTPUT FINAL ---
+    # --- 5. OUTPUT FINAL ---
     symptoms = map_symptoms(data.complaint)
     recommendations = get_otc_recommendations(symptoms) if triage_result != "MERAH" else []
 
