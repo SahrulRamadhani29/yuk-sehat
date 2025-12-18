@@ -15,8 +15,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title="YUK SEHAT – Pra-Triase Digital",
-    description="Sistem Pra-triase dengan Prioritas Keselamatan (Safety First).",
-    version="1.5"
+    description="Sistem Pra-triase dengan Smart-Triage Logic (Safety & Depth Analysis).",
+    version="1.6"
 )
 
 app.add_middleware(
@@ -63,7 +63,7 @@ def triage(data: TriageInput):
             follow_up_questions=pre_ai_questions
         )
 
-    # --- 2. ANALISIS AI ---
+    # --- 2. ANALISIS AWAL (AI & RULES) ---
     rule_category = detect_danger_category(data.complaint)
     ai_urgency = "LOW"
     ai_category = "UMUM"
@@ -84,19 +84,19 @@ def triage(data: TriageInput):
         except Exception:
             ai_reason = "AI sedang tidak tersedia"
 
-    # --- 3. DECISION ENGINE (PRIORITAS KESELAMATAN) ---
-    # Logika bahaya dimajukan SEBELUM pengecekan follow-up
+    # --- 3. DECISION ENGINE PART 1: EMERGENCY FIRST ---
     effective_duration = data.duration_hours if data.duration_hours > 0 else ai_duration
-    is_danger = bool(rule_category or ai_urgency == "HIGH" or data.danger_sign)
     risk_group = is_risk_group(data.age, data.pregnant, data.comorbidity)
+    
+    # Jika terdeteksi BAHAYA NYATA (Manual atau High Urgency AI)
+    is_immediate_danger = bool(rule_category or ai_urgency == "HIGH" or data.danger_sign)
 
-    # JIKA TERDETEKSI BAHAYA, LANGSUNG COMPLETE MERAH
-    if is_danger:
+    if is_immediate_danger:
         triage_result = "MERAH"
         save_triage_log(data, triage_result, True, risk_group)
         return TriageResponse(
             status="COMPLETE",
-            message="Hasil triase selesai dianalisis: KONDISI DARURAT.",
+            message="Hasil triase selesai: KONDISI DARURAT.",
             triage_result=triage_result,
             category=rule_category or ai_category,
             is_risk_group=risk_group,
@@ -108,28 +108,29 @@ def triage(data: TriageInput):
             }
         )
 
-    # --- 4. FOLLOW-UP (HANYA JIKA TIDAK BAHAYA) ---
+    # --- 4. DECISION ENGINE PART 2: SMART FOLLOW-UP ---
+    # Jika tidak gawat darurat, tapi AI masih butuh konfirmasi gejala kombinasi
     if needs_follow_up and follow_up_qs:
         return TriageResponse(
             status="INCOMPLETE",
-            message="Sistem memerlukan informasi tambahan.",
+            message="Sistem memerlukan informasi tambahan untuk memastikan tidak ada gejala kombinasi berbahaya.",
             follow_up_questions=follow_up_qs
         )
 
-    # --- 5. KLASIFIKASI AKHIR (KUNING / HIJAU) ---
+    # --- 5. KLASIFIKASI AKHIR (Hanya jika AI sudah yakin) ---
     if ai_urgency == "MEDIUM" or risk_group or (effective_duration > 48):
         triage_result = "KUNING"
     else:
         triage_result = "HIJAU"
 
     symptoms = map_symptoms(data.complaint)
-    recommendations = get_otc_recommendations(symptoms) if triage_result != "MERAH" else []
+    recommendations = get_otc_recommendations(symptoms) if triage_result == "HIJAU" else []
 
-    save_triage_log(data, triage_result, is_danger, risk_group)
+    save_triage_log(data, triage_result, False, risk_group)
 
     return TriageResponse(
         status="COMPLETE",
-        message="Hasil triase Anda telah selesai dianalisis.",
+        message="Analisis selesai. Berikut adalah hasil triase Anda.",
         triage_result=triage_result,
         category=rule_category or ai_category,
         is_risk_group=risk_group,
