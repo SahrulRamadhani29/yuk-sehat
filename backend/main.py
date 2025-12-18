@@ -15,8 +15,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title="YUK SEHAT – Pra-Triase Digital",
-    description="Sistem Pra-triase berbasis NLU dan Aturan WHO.",
-    version="1.4" # Update ke 1.4: Pre-AI Validation Logic
+    description="Sistem Pra-triase dengan Prioritas Keselamatan (Safety First).",
+    version="1.5"
 )
 
 app.add_middleware(
@@ -49,28 +49,22 @@ def save_triage_log(data: TriageInput, triage_result: str, danger_sign: bool, ri
 
 @app.post("/triage", response_model=TriageResponse)
 def triage(data: TriageInput):
-    # --- 1. VALIDASI DATA DASAR (PRE-AI) ---
-    # Memastikan Usia dan Durasi diisi sebelum melakukan analisis AI mendalam
-    # Ini mencegah input double dan meningkatkan akurasi NLU
+    # --- 1. VALIDASI DATA DASAR (USIA & DURASI) ---
     pre_ai_questions = []
-    
     if not data.age or data.age <= 0:
         pre_ai_questions.append({"q": "Berapa usia Anda saat ini?", "type": "number"})
-    
     if not data.duration_hours or data.duration_hours <= 0:
-        pre_ai_questions.append({"q": "Sudah berapa jam Anda merasakan keluhan ini? (Masukkan angka saja)", "type": "number"})
+        pre_ai_questions.append({"q": "Sudah berapa jam Anda merasakan keluhan ini?", "type": "number"})
 
-    # Jika data dasar belum lengkap, langsung kembalikan status INCOMPLETE tanpa panggil AI
     if pre_ai_questions:
         return TriageResponse(
             status="INCOMPLETE",
-            message="Mohon lengkapi data dasar berikut sebelum sistem melakukan analisis medis.",
+            message="Mohon lengkapi data dasar berikut.",
             follow_up_questions=pre_ai_questions
         )
 
-    # --- 2. ANALISIS AI (PANGGIL JIKA DATA DASAR LENGKAP) ---
+    # --- 2. ANALISIS AI ---
     rule_category = detect_danger_category(data.complaint)
-    
     ai_urgency = "LOW"
     ai_category = "UMUM"
     ai_reason = ""
@@ -80,7 +74,6 @@ def triage(data: TriageInput):
 
     if USE_AI:
         try:
-            # AI sekarang menerima state yang sudah berisi Age dan Duration yang valid
             ai_res = parse_complaint_with_ai(data.complaint)
             ai_urgency = ai_res.get("urgency_level", "LOW")
             ai_category = ai_res.get("category", "UMUM")
@@ -91,33 +84,44 @@ def triage(data: TriageInput):
         except Exception:
             ai_reason = "AI sedang tidak tersedia"
 
-    # --- 3. LOGIKA VALIDASI LANJUTAN (FOLLOW-UP AI) ---
-    # Jika AI mendeteksi butuh konfirmasi gejala lain (Ya/Tidak)
-    if needs_follow_up and follow_up_qs:
-        # Filter untuk memastikan AI tidak menanyakan Usia/Durasi lagi (Anti-Double)
-        filtered_qs = [q for q in follow_up_qs if "usia" not in q['q'].lower() and "lama" not in q['q'].lower()]
-        
-        if filtered_qs:
-            return TriageResponse(
-                status="INCOMPLETE",
-                message="Sistem mendeteksi gejala yang perlu perhatian khusus. Mohon jawab pertanyaan berikut.",
-                follow_up_questions=filtered_qs
-            )
-
-    # --- 4. DECISION ENGINE (COMPLETE) ---
+    # --- 3. DECISION ENGINE (PRIORITAS KESELAMATAN) ---
+    # Logika bahaya dimajukan SEBELUM pengecekan follow-up
     effective_duration = data.duration_hours if data.duration_hours > 0 else ai_duration
-    
     is_danger = bool(rule_category or ai_urgency == "HIGH" or data.danger_sign)
     risk_group = is_risk_group(data.age, data.pregnant, data.comorbidity)
 
+    # JIKA TERDETEKSI BAHAYA, LANGSUNG COMPLETE MERAH
     if is_danger:
         triage_result = "MERAH"
-    elif ai_urgency == "MEDIUM" or risk_group or (effective_duration > 48):
+        save_triage_log(data, triage_result, True, risk_group)
+        return TriageResponse(
+            status="COMPLETE",
+            message="Hasil triase selesai dianalisis: KONDISI DARURAT.",
+            triage_result=triage_result,
+            category=rule_category or ai_category,
+            is_risk_group=risk_group,
+            recommendation=[],
+            ai_analysis={
+                "urgency": ai_urgency,
+                "reason": ai_reason or "Tanda bahaya terdeteksi.",
+                "extracted_duration_hours": effective_duration
+            }
+        )
+
+    # --- 4. FOLLOW-UP (HANYA JIKA TIDAK BAHAYA) ---
+    if needs_follow_up and follow_up_qs:
+        return TriageResponse(
+            status="INCOMPLETE",
+            message="Sistem memerlukan informasi tambahan.",
+            follow_up_questions=follow_up_qs
+        )
+
+    # --- 5. KLASIFIKASI AKHIR (KUNING / HIJAU) ---
+    if ai_urgency == "MEDIUM" or risk_group or (effective_duration > 48):
         triage_result = "KUNING"
     else:
         triage_result = "HIJAU"
 
-    # --- 5. OUTPUT FINAL ---
     symptoms = map_symptoms(data.complaint)
     recommendations = get_otc_recommendations(symptoms) if triage_result != "MERAH" else []
 
@@ -133,6 +137,6 @@ def triage(data: TriageInput):
         ai_analysis={
             "urgency": ai_urgency,
             "reason": ai_reason,
-            "extracted_duration_hours": ai_duration
+            "extracted_duration_hours": effective_duration
         }
     )
