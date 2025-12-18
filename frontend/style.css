@@ -1,0 +1,63 @@
+/* style.css */
+
+/* 1. ANIMASI TRANSISI HALAMAN (FADE IN) */
+/* Memberikan efek muncul perlahan dari bawah agar tidak kaku */
+.page-fade-in {
+    animation: pageFadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes pageFadeIn {
+    from { 
+        opacity: 0; 
+        transform: translateY(15px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
+
+/* 2. CUSTOM LOADER (ANIMASI BERPUTAR) */
+/* Muncul saat sistem sedang menunggu respon dari API Render */
+.loader-circle {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f1f5f9; /* Slate 100 */
+    border-top: 5px solid #2563eb; /* Blue 600 (Warna Utama Yuk Sehat) */
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 3. CUSTOM SCROLLBAR UNTUK TEXTAREA */
+/* Agar tampilan input keluhan tetap rapi di PC maupun HP */
+textarea::-webkit-scrollbar {
+    width: 6px;
+}
+textarea::-webkit-scrollbar-track {
+    background: transparent;
+}
+textarea::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+}
+
+/* 4. EFEK INTERAKSI TOMBOL */
+/* Memberikan sensasi membal (feedback) saat tombol ditekan di layar HP */
+.btn-click-effect:active {
+    transform: scale(0.96);
+    transition: transform 0.1s ease;
+}
+
+/* 5. KONTROL TRANSISI KONTAINER UTAMA */
+/* Mengatur agar perubahan tinggi kotak (app-container) terasa halus */
+#app-container {
+    transition: height 0.4s ease, background-color 0.4s ease;
+    display: flex;
+    flex-direction: column;
+}

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YUK SEHAT - Sistem Pra-Triase Digital</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-50 min-h-screen font-['Plus_Jakarta_Sans'] text-slate-900">
+
+    <nav class="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 py-4 px-6">
+        <div class="container mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="bg-blue-600 p-2 rounded-xl text-white shadow-lg shadow-blue-200">
+                    <i class="fas fa-hospital-user text-xl"></i>
+                </div>
+                <h1 class="text-xl font-extrabold tracking-tight text-slate-800 uppercase">Yuk Sehat</h1>
+            </div>
+            <span id="connection-status" class="text-[10px] font-bold px-3 py-1 bg-emerald-100 text-emerald-600 rounded-full uppercase tracking-widest">System Online</span>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-4 py-8 max-w-xl">
+        <div id="app-container" class="bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/60 p-6 md:p-10 min-h-[500px] flex flex-col transition-all duration-500 overflow-hidden border border-white">
+            
+            <div class="flex flex-col items-center justify-center h-full my-auto">
+                <div class="loader-circle mb-4"></div>
+                <p class="text-slate-400 font-medium animate-pulse">Menyiapkan sistem...</p>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="text-center py-8">
+        <p class="text-slate-400 text-[10px] font-bold uppercase tracking-[0.3em]">
+            Digital Triage Solution &bull; 2024
+        </p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
