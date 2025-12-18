@@ -1,9 +1,15 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List, Any
+from typing import Optional, List, Dict, Any
+
+# --- MODEL PEMBANTU ---
+class FollowUpQuestion(BaseModel):
+    """Model untuk struktur pertanyaan dinamis dari AI"""
+    q: str = Field(..., description="Isi pertanyaan")
+    type: str = Field(..., description="Tipe input: 'number' atau 'boolean'")
 
 # --- INPUT SCHEMAS ---
 class TriageInput(BaseModel):
-    # Kita ubah age menjadi Optional dengan default 0 agar tidak error saat user baru input teks saja
+    # Usia opsional agar sistem bisa meminta input belakangan via Incomplete
     age: Optional[int] = Field(0, example=30, description="Usia pasien (tahun)")
     complaint: str = Field(
         ..., example="Nyeri dada mendadak", description="Keluhan utama"
@@ -22,16 +28,23 @@ class TriageInput(BaseModel):
         description="Tanda bahaya yang disadari pengguna"
     )
 
-# --- RESPONSE SCHEMAS (BARU) ---
+# --- RESPONSE SCHEMAS (REVISI FINAL) ---
 class TriageResponse(BaseModel):
     status: str = Field(..., example="COMPLETE", description="Status proses: COMPLETE atau INCOMPLETE")
     message: str = Field(..., description="Pesan dari sistem untuk user")
-    ask_for: Optional[List[str]] = Field(None, description="Daftar field yang masih kosong (age, duration_hours)")
-    follow_up_questions: Optional[List[str]] = Field(None, description="Pertanyaan tambahan untuk gejala kombinasi")
+    
+    # REVISI: Menggunakan model FollowUpQuestion untuk mendukung format objek {"q": "...", "type": "..."}
+    follow_up_questions: Optional[List[FollowUpQuestion]] = Field(
+        default=[], 
+        description="Daftar pertanyaan tambahan beserta tipe inputnya"
+    )
+    
+    # Field pendukung validasi lama (Opsional)
+    ask_for: Optional[List[str]] = Field(None, description="Daftar field yang masih kosong")
     
     # Data hasil triase (Hanya ada jika status COMPLETE)
     triage_result: Optional[str] = None
     category: Optional[str] = None
     is_risk_group: Optional[bool] = None
     recommendation: Optional[List[str]] = None
-    ai_analysis: Optional[dict] = None
+    ai_analysis: Optional[Dict[str, Any]] = None
