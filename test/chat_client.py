@@ -1,60 +1,70 @@
 # chat_client.py
 import requests
+import re
 
-# URL Backend Lokal
-URL_TRIAGE = "http://127.0.0.1:8000/triage"
-URL_CHECK_NIK = "http://127.0.0.1:8000/check-nik"
-URL_HISTORY = "http://127.0.0.1:8000/user-history"
+# URL Backend (Sesuaikan jika sudah deploy ke Render)
+URL_BASE = "http://127.0.0.1:8000"
+# URL_BASE = "https://yuk-sehat.onrender.com"
+
+URL_TRIAGE = f"{URL_BASE}/triage"
+URL_CHECK_NIK = f"{URL_BASE}/check-nik"
+URL_HISTORY = f"{URL_BASE}/user-history"
+
+def extract_duration_local(text: str) -> bool:
+    """Cek apakah user sudah memasukkan durasi dalam teks keluhan."""
+    text = text.lower()
+    return bool(re.search(r'\d+\s*(jam|hari|minggu|bulan)', text))
 
 def start_chat():
     print("=== SISTEM TRIASE DIGITAL ===")
     
-    # Inisialisasi variabel default untuk menghindari warning/garis kuning
-    nik = ""
-    age = 0
-    duration = 0
-    complaint = ""
-    user_data = {"exists": False, "age": None}
-
-    # 1. Input NIK
     nik = input("Masukkan NIK Anda: ")
-    # 2. Fitur Baru: Tabel Riwayat Lengkap (Diperbaiki)
+
+    # 1. Tampilkan Tabel Riwayat (User History)
     try:
         history_resp = requests.get(f"{URL_HISTORY}/{nik}")
         if history_resp.status_code == 200:
             history_list = history_resp.json()
             if history_list:
-                print("\n" + "="*85)
-                # GUNAKAN TEKS MANUAL UNTUK JUDUL (Bukan variabel)
-                print(f"{'TANGGAL':<12} | {'KELUHAN':<30} | {'KATEGORI':<15} | {'HASIL':<7}")
-                print("-" * 85)
-                
+                print("\n" + "="*75)
+                print(f"{'TANGGAL':<12} | {'KELUHAN':<35} | {'HASIL':<7} | {'KATEGORI':<15}")
+                print("-" * 75)
                 for log in history_list[:5]:
                     date_only = log['date'].split("T")[0]
-                    category = log.get('category', 'UMUM')
-                    
-                    # Bersihkan teks keluhan dari sisa investigasi AI agar rapi di tabel
-                    clean_complaint = log['complaint'].split("- Investigasi:")[0].strip()
-                    complaint_short = (clean_complaint[:27] + '..') if len(clean_complaint) > 27 else clean_complaint
-                    
-                    print(f"{date_only:<12} | {complaint_short:<30} | {category:<15} | {log['result']:<7}")
-                print("="*85 + "\n")
+                    # Bersihkan teks agar rapi di tabel
+                    clean_comp = log['complaint'].split("\n")[0][:32]
+                    print(f"{date_only:<12} | {clean_comp:<35} | {log['result']:<7} | {log['category']:<15}")
+                print("="*75 + "\n")
             else:
-                print("\n(Belum ada riwayat medis terdaftar untuk NIK ini)\n")
+                print("\n(Belum ada riwayat medis untuk NIK ini)\n")
     except Exception as e:
-        print(f"\n(Sistem gagal memuat tabel riwayat: {e})\n")
-    # 3. Cek NIK untuk Auto-Detect Usia
+        print(f"\n(Gagal memuat riwayat: {e})\n")
+
+    # 2. Deteksi NIK & Usia
+    user_data = {"exists": False, "age": None}
     try:
         check_resp = requests.get(f"{URL_CHECK_NIK}/{nik}")
         if check_resp.status_code == 200:
             user_data = check_resp.json()
-    except:
-        user_data = {"exists": False, "age": None}
+    except: pass
 
-    # 4. Input Keluhan & Data Dasar
+    # 3. Input Keluhan Utama
     complaint = input("Apa keluhan Anda saat ini? ")
     
-    if user_data.get("exists"):
+    # 4. Logika Durasi Otomatis (PEMBARUAN)
+    duration = 0
+    # Jika dalam teks keluhan TIDAK ada kata 'jam/hari/minggu/bulan', baru tanya manual
+    if not extract_duration_local(complaint):
+        try:
+            duration_input = input("Sudah berapa jam keluhan dirasakan? (Kosongkan jika sudah ada di teks): ")
+            duration = int(duration_input) if duration_input.strip() else 0
+        except ValueError:
+            duration = 0
+    else:
+        print("Sistem mendeteksi durasi dari keluhan Anda...")
+
+    # 5. Deteksi Usia Otomatis
+    if user_data.get("exists") and user_data["age"]:
         age = user_data["age"]
         print(f"Sistem mengenali Anda (Usia: {age} tahun).")
     else:
@@ -64,13 +74,7 @@ def start_chat():
             print("Error: Usia harus angka!")
             return
 
-    try:
-        duration = int(input("Sudah berapa jam keluhan ini dirasakan? (Angka saja): "))
-    except ValueError:
-        print("Error: Durasi harus angka!")
-        return
-    
-    # 5. Persiapan Payload untuk Triase
+    # 6. Persiapan Payload
     payload = {
         "nik": nik,
         "complaint": complaint,
@@ -81,9 +85,9 @@ def start_chat():
         "danger_sign": False
     }
 
-    print("\nSedang menganalisis keluhan awal Anda...")
+    print("\nSedang menganalisis keluhan Anda...")
 
-    # 6. Loop Investigasi AI (Follow-up)
+    # 7. Loop Investigasi AI
     while True:
         try:
             response = requests.post(URL_TRIAGE, json=payload)
@@ -93,42 +97,41 @@ def start_chat():
             
             data = response.json()
         except Exception as e:
-            print(f"Gagal terhubung ke server: {e}")
+            print(f"Koneksi terputus: {e}")
             break
 
-        # A. Jika Analisis Selesai
         if data["status"] == "COMPLETE":
-            print("\n" + "="*45)
+            print("\n" + "="*50)
             print(f"HASIL TRIASE : {data['triage_result']}")
             print(f"KATEGORI     : {data['category']}")
-            print(f"ANALISIS AI  : {data['ai_analysis']['reason']}")
             
-            if data["recommendation"]:
+            # Mendukung format respons baru dari main.py
+            # Ubah baris 109 menjadi:
+            ai_data = data.get("ai_analysis") or {}
+            reason = ai_data.get("reason") or data.get("analysis") or "Selesai."
+            print(f"ANALISIS AI  : {reason}")
+            
+            recs = data.get("recommendation") or data.get("recommendations")
+            if recs:
                 print("\nSARAN TINDAKAN & OBAT:")
-                for rec in data["recommendation"]:
+                for rec in recs:
                     print(f"- {rec}")
             
             if data["triage_result"] == "MERAH":
                 print("\n!!! SEGERA KE IGD RUMAH SAKIT TERDEKAT !!!")
-            elif data["triage_result"] == "KUNING":
-                print("\nDisarankan segera berkonsultasi dengan dokter.")
-            
-            print("="*45)
+            print("="*50)
             break
         
-        # B. Jika AI Meminta Informasi Tambahan
         elif data["status"] == "INCOMPLETE":
             print("\n--- Pertanyaan dari Investigator AI ---")
             new_responses = ""
-            
             for q in data["follow_up_questions"]:
-                prompt_label = f"[{q['type'].upper()}]"
-                user_answer = input(f"{prompt_label} {q['q']} \n>> Jawab: ")
-                new_responses += f"\n- Investigasi: {q['q']} | Jawaban Pasien: {user_answer}"
+                ans = input(f"[{q['type'].upper()}] {q['q']} \n>> Jawab: ")
+                # Gunakan label baru agar sinkron dengan backend
+                new_responses += f"\nInvestigasi: {q['q']}\nJawaban Pasien: {ans}"
             
-            # Gabungkan jawaban baru ke keluhan untuk dikirim ulang
             payload["complaint"] += new_responses
-            print("\nMenyinkronkan jawaban Anda dengan sistem...")
+            print("\nMenyinkronkan data...")
 
 if __name__ == "__main__":
     start_chat()

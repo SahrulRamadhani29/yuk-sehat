@@ -84,6 +84,11 @@ def classify_triage(
     if duration_hours is not None and duration_hours > 48:
         return TRIAGE_YELLOW
 
+    # Di dalam classify_triage pada rules.py:
+    if duration_hours is not None:
+        if duration_hours > 504: # Lebih dari 3 minggu
+            return TRIAGE_YELLOW
+        
     # 3. NON-URGENT (Status HIJAU)
     # Hanya untuk pasien tanpa risiko dan durasi baru.
     return TRIAGE_GREEN

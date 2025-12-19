@@ -18,6 +18,9 @@ class TriageLog(Base):
     
     age = Column(Integer)
     
+    # TAMBAHAN: Kolom durasi untuk mendukung logika ekstraksi baru
+    duration_hours = Column(Integer, nullable=True) 
+    
     # Menggunakan Text untuk mendukung riwayat percakapan yang panjang
     complaint = Column(Text) 
     category = Column(String, default="UMUM")

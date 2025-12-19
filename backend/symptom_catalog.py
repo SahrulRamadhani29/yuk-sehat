@@ -2,114 +2,315 @@
 from typing import Optional
 
 # ---------------------------------------------------------
-# 1. MILD SYMPTOMS (Kategori Hijau/Kuning)
-# Pemetaan kata kunci masif: Bahasa Indonesia, Medis, & Daerah
+# 1. MILD–MODERATE SYMPTOMS (Kategori Hijau/Kuning)
 # ---------------------------------------------------------
+# Nama kategori (Keys) telah diselaraskan dengan 32 kategori sistem
+# ---------------------------------------------------------
+
 SYMPTOM_MAP = {
-    "demam_ringan": [
-        "demam", "panas", "meriang", "sumeng", "badan hangat", "greges", "suhu naik",
-        "badan gerah", "keringat dingin", "demam naik turun", "panas dalam", "badan adem panas",
-        "menggigil ringan", "badan panas dingin", "anak panas", "bayi panas", "kancing gigi"
+
+    "pernapasan": [
+        "batuk", "batuk kering", "batuk berdahak", "pilek", "flu", "ingusan",
+        "hidung mampet", "hidung tersumbat", "napas grok", "grok-grok",
+        "bersin", "bersin-bersin", "ispa", "bronkitis ringan",
+        "tenggorokan berlendir", "suara serak", "idung mampet"
     ],
-    "batuk_pilek": [
-        "batuk", "pilek", "hidung tersumbat", "hidung meler", "bersin", "flu", "ingusan",
-        "batuk berdahak", "batuk kering", "pilek mampet", "grok-grok", "suara serak",
-        "hidung buntu", "bersin-bersin", "pilek berat", "batuk rejan", "lendir di tenggorokan",
-        "ispa", "bronkitis ringan", "napas grok", "idung mampet"
+
+    "sirkulasi_jantung": [
+        "deg-degan ringan", "jantung berdebar", "ndrodok",
+        "cepat capek", "mudah lelah", "tangan dingin",
+        "pusing saat berdiri", "kunang-kunang",
+        "tekanan darah naik ringan", "tekanan darah turun ringan"
     ],
-    "sakit_kepala_ringan": [
-        "pusing", "sakit kepala", "kepala berat", "cekot-cekot", "pening", "migrain ringan",
-        "nyut-nyutan", "puyeng", "kleyengan", "kepala senat-senut", "migren", "sakit pelipis",
-        "pusing tujuh keliling", "kepala pening", "migraine", "vertigo ringan"
+
+    "neurologis": [
+        "pusing", "pening", "puyeng", "kleyengan",
+        "sakit kepala", "kepala berat", "cekot-cekot",
+        "nyut-nyutan", "migren ringan", "migrain",
+        "vertigo ringan", "kepala melayang"
     ],
-    "nyeri_otot_ringan": [
-        "pegal", "nyeri otot", "linu", "nyeri badan", "pegal linu", "badan sakit semua",
-        "nyeri sendi", "boyok sakit", "pegel", "otot kaku", "salah urat", "badan remuk",
-        "encok", "saraf terjepit", "pegel-pegel", "punggung nyeri", "pinggang sakit", "asam urat"
+
+    "pencernaan": [
+        "mual", "eneg", "begah", "kembung", "perut penuh",
+        "perut perih", "ulu hati perih", "maag", "sakit maag",
+        "asam lambung", "gerd", "perut melilit ringan",
+        "lambung tidak enak", "mual setelah makan"
     ],
-    "nyeri_tenggorokan": [
-        "sakit tenggorokan", "tenggorokan perih", "sakit menelan", "tenggorokan gatal", "radang",
-        "tenggorokan sakit", "tenggorokan mengganjal", "serak", "nelan sakit", "tenggorokan panas",
-        "tenggorokan kering", "susah nelan", "amandel kumat", "tenggorokan merah", "sariawan tenggorokan"
+
+    "tenggorokan": [
+        "sakit tenggorokan", "tenggorokan perih", "tenggorokan gatal",
+        "sakit menelan", "nelan sakit", "serak",
+        "radang tenggorokan", "tenggorokan panas",
+        "amandel bengkak ringan", "tenggorokan kering"
     ],
-    "sakit_gigi": [
-        "sakit gigi", "gigi berlubang", "gigi pecah", "gusi nyeri", "gigi berdenyut", "nyeri gigi",
-        "gusi bengkak", "gigi goyang", "linu gigi", "sakit gusi", "geraham sakit", "gusi berdarah",
-        "pipi bengkak karena gigi", "gigi bungsu", "senat senut gigi"
+
+    "hidung_sinus": [
+        "pilek", "hidung mampet", "hidung buntu",
+        "ingus kental", "ingus hijau",
+        "bersin terus", "nyeri sinus ringan",
+        "idung mampet", "hidung gatal"
     ],
-    "diare_ringan": [
-        "diare", "mencret", "buang air terus", "murus", "mencret-mencret", "menceret",
-        "bab cair", "mencret air", "bab lembek", "urus-urus", "kebelet bab", "feses cair"
+
+    "telinga": [
+        "telinga nyeri ringan", "telinga berdenging",
+        "telinga terasa penuh", "pendengaran berkurang ringan",
+        "telinga gatal", "telinga kemasukan air"
     ],
-    "mual_ringan": [
-        "mual", "ingin muntah", "eneg", "lambung tidak enak", "perut perih", "sakit maag",
-        "asam lambung", "perut melilit", "kembung", "begah", "perut kaku", "ulu hati perih",
-        "gerd", "lambung perih", "muntah-muntah kecil", "perut sebah", "perut peres"
+
+    "mata": [
+        "mata merah", "mata perih", "mata gatal",
+        "mata berair", "mata lelah",
+        "penglihatan buram ringan", "mata panas"
     ],
-    "masalah_kulit_ringan": [
-        "gatal", "ruam ringan", "biang keringat", "panu", "kudis", "bentol", "alergi kulit",
-        "kulit merah", "budukan", "eksim", "biduran", "kaligata", "kurap", "kutu air",
-        "kulit melepuh", "cacar air", "jerawat meradang", "kadas"
+
+    "gigi_mulut": [
+        "sakit gigi", "senat-senut gigi", "linu gigi",
+        "gigi berlubang", "gusi nyeri",
+        "gusi bengkak ringan", "sariawan",
+        "bau mulut", "geraham sakit"
     ],
-    "sembelit_konstipasi": [
-        "susah bab", "sembelit", "konstipasi", "perut begah", "tidak bisa bab", "bab keras",
-        "bebelen", "ngeden susah", "bab tidak lancar", "susah buang air besar"
+
+    "kulit": [
+        "gatal", "ruam", "ruam ringan",
+        "bentol", "biduran", "kaligata",
+        "biang keringat", "eksim ringan",
+        "kudis", "kurap", "kadas",
+        "panu", "kutu air", "kulit merah"
     ],
-    "kesehatan_mental_ringan": [
-        "cemas", "gelisah", "susah tidur", "insomnia", "stres", "panik", "deg-degan takut"
+
+    "alergi": [
+        "alergi", "reaksi alergi ringan",
+        "gatal setelah makan", "bentol alergi",
+        "bersin alergi", "hidung gatal",
+        "mata gatal", "alergi debu", "alergi dingin"
     ],
-    "kesehatan_ibu_anak": [
-        "nyeri haid", "haid tidak teratur", "mual hamil", "asi mampet", "ruam popok bayi"
+
+    "demam_infeksi": [
+        "demam", "panas", "meriang", "sumeng",
+        "badan hangat", "demam naik turun",
+        "panas dingin", "menggigil ringan",
+        "anak panas", "bayi panas", "demam rendah"
+    ],
+
+    "otot_sendi": [
+        "pegal", "pegel", "linu", "pegal linu",
+        "nyeri otot", "nyeri sendi",
+        "otot kaku", "salah urat",
+        "keseleo ringan", "encok",
+        "pinggang pegal", "punggung pegal"
+    ],
+
+    "saluran_kemih": [
+        "anyang-anyangan", "nyeri kencing",
+        "kencing sering", "kencing sedikit",
+        "kencing tidak tuntas", "air kencing keruh",
+        "isk ringan", "perih saat kencing"
+    ],
+
+    "reproduksi_wanita": [
+        "nyeri haid", "sakit haid", "dismenore",
+        "haid tidak teratur", "keputihan",
+        "keputihan gatal", "perut bawah nyeri ringan"
+    ],
+
+    "reproduksi_pria": [
+        "nyeri selangkangan ringan",
+        "nyeri testis ringan",
+        "gatal area kemaluan",
+        "tidak nyaman kemaluan"
+    ],
+
+    "kia": [
+        "mual hamil ringan", "muntah hamil ringan",
+        "asi mampet", "puting nyeri",
+        "ruam popok", "bayi rewel",
+        "anak susah makan"
+    ],
+
+    "mental": [
+        "cemas", "gelisah", "stres",
+        "panik ringan", "overthinking",
+        "pikiran tidak tenang", "emosi labil"
+    ],
+
+    "tidur": [
+        "susah tidur", "insomnia",
+        "tidur gelisah", "sering terbangun",
+        "ngantuk siang", "pola tidur kacau"
+    ],
+
+    "kelelahan": [
+        "lemas", "capek", "lelah", "lesu",
+        "tidak bertenaga", "badan drop",
+        "kurang fit", "ngantuk terus"
     ]
 }
 
 # ---------------------------------------------------------
 # 2. DANGER CATEGORIES (WHO ETAT & IMCI) - STATUS MERAH
 # ---------------------------------------------------------
+
 DANGER_CATEGORIES = {
-    "PERNAPASAN": [
-        "sesak napas", "sulit bernapas", "napas berat", "napas cepat", "tidak bisa bernapas", 
-        "napas bunyi", "mengi", "ngos-ngosan", "napas megap-megap", "tarikan dinding dada", 
-        "bengek", "napas satu-satu", "asma kumat", "napas pendek", "stridor", "sianosis",
-        "napas bunyi ngik", "oksigen rendah", "sesak dada", "tersedak", "henti napas"
+
+    "pernapasan": [
+        "sesak napas", "susah napas", "sulit bernapas", "tidak bisa bernapas",
+        "napas berat", "napas pendek", "napas cepat sekali", "napas megap-megap",
+        "ngos-ngosan", "bengek berat", "asma berat", "asma kumat parah",
+        "napas bunyi", "napas grok berat", "mengi keras", "stridor",
+        "tarikan dinding dada", "cuping hidung kembang kempis",
+        "napas satu-satu", "napas putus-putus", "henti napas",
+        "tersedak", "tersumbat jalan napas",
+        "bibir biru", "lidah biru", "ujung jari biru",
+        "sianosis", "oksigen rendah", "saturasi turun",
+        "dada sesak berat", "napas ngik", "napas berbunyi keras"
     ],
-    "SIRKULASI": [
-        "nyeri dada", "dada terasa tertekan", "jantung berdebar hebat", "nadi tidak teraba", 
-        "tangan kaki dingin", "bibir biru", "pucat sekali", "syok", "nyeri jantung", "dada sakit",
-        "dada seperti ditusuk", "keringat jagung", "dada sesak sekali", "nadi cepat",
-        "jantung deg-degan parah", "pingsan karena jantung", "aritmia", "serangan jantung"
+
+    "sirkulasi_jantung": [
+        "nyeri dada hebat", "nyeri dada kiri", "dada terasa ditekan",
+        "dada seperti ditimpa", "dada seperti diremas",
+        "jantung berdebar hebat", "deg-degan parah",
+        "aritmia", "denyut jantung tidak teratur",
+        "nadi lemah", "nadi tidak teraba",
+        "tangan kaki dingin", "akral dingin",
+        "keringat dingin", "keringat jagung",
+        "pucat sekali", "lemas mendadak",
+        "syok", "shock",
+        "pingsan karena jantung",
+        "serangan jantung", "henti jantung",
+        "tekanan darah turun drastis",
+        "kolaps"
     ],
-    "NEUROLOGIS": [
-        "pingsan", "tidak sadar", "kejang", "kejang-kejang", "linglung berat", 
-        "tidak bisa dibangunkan", "penurunan kesadaran", "kaku kuduk", "leher kaku", 
-        "bicara pelo", "lemas sebelah badan", "bicara tidak jelas", "wajah mencong", 
-        "stroke", "lumpuh", "setengah badan mati rasa", "koma", "mata mendelik",
-        "sulit bicara", "mulut miring", "pandangan kabur mendadak", "kelumpuhan"
+
+    "neurologis": [
+        "pingsan", "tidak sadar", "hilang kesadaran",
+        "tidak bisa dibangunkan", "mengantuk berat",
+        "penurunan kesadaran",
+        "kejang", "kejang-kejang", "step",
+        "kejang lama", "kejang berulang",
+        "linglung berat", "kebingungan mendadak",
+        "bicara pelo", "bicara tidak jelas",
+        "mulut miring", "wajah mencong",
+        "lemas sebelah badan", "kelumpuhan",
+        "setengah badan mati rasa",
+        "stroke", "serangan stroke",
+        "koma", "mata mendelik",
+        "kaku kuduk", "leher kaku",
+        "pandangan kabur mendadak",
+        "tidak bisa bicara"
     ],
-    "PERDARAHAN": [
-        "batuk berdarah", "muntah darah", "berak berdarah", "bab berdarah", "bab hitam", 
-        "perdarahan hebat", "darah banyak", "mimisan tidak berhenti", "kencing darah", 
-        "darah mengalir", "pendarahan vagina", "darah segar", "luka robek besar",
-        "pendarahan hamil", "keluar darah banyak"
+
+    "perdarahan": [
+        "perdarahan hebat", "darah banyak", "darah mengalir",
+        "muntah darah", "batuk darah",
+        "bab berdarah", "berak berdarah",
+        "bab hitam", "tinja hitam",
+        "mimisan tidak berhenti",
+        "kencing darah",
+        "pendarahan vagina banyak",
+        "darah segar keluar banyak",
+        "pendarahan pasca melahirkan",
+        "pendarahan hamil",
+        "luka berdarah deras",
+        "kehilangan banyak darah"
     ],
-    "TRAUMA": [
-        "tertancap paku", "luka dalam", "luka parah", "jatuh keras", "kecelakaan", 
-        "patah tulang", "benturan kepala", "luka bakar luas", "digigit ular", "keracunan",
-        "minum racun", "kena tusuk", "tulang menonjol", "tabrakan", "kesetrum", "tenggelam"
+
+    "trauma_cedera": [
+        "kecelakaan", "tabrakan", "jatuh keras",
+        "jatuh dari ketinggian",
+        "patah tulang", "tulang menonjol",
+        "benturan kepala keras",
+        "kepala terbentur",
+        "luka robek besar", "luka dalam",
+        "luka parah", "perdarahan luka",
+        "luka bakar luas", "terbakar",
+        "kesetrum", "tersetrum",
+        "tenggelam", "hampir tenggelam",
+        "tertancap benda", "kena tusuk",
+        "digigit ular", "digigit anjing",
+        "keracunan", "minum racun",
+        "overdosis obat",
+        "terpapar gas beracun"
     ],
-    "KIA_DARURAT": [
-        "kejang kehamilan", "eklampsia", "ketuban pecah", "bayi tidak bernapas", "bayi biru"
+
+    "kia": [
+        "kejang kehamilan", "eklampsia",
+        "tekanan darah tinggi hamil",
+        "pendarahan hamil",
+        "ketuban pecah dini",
+        "ketuban pecah lama",
+        "kontraksi hebat",
+        "nyeri perut hamil hebat",
+        "bayi tidak bernapas",
+        "bayi biru",
+        "bayi lemas sekali",
+        "bayi tidak menangis",
+        "bayi tidak mau minum",
+        "anak kejang",
+        "anak tidak sadar",
+        "demam tinggi anak dengan kejang"
     ]
 }
 
 # ---------------------------------------------------------
 # 3. MODERATE RISK (Kategori Kuning)
 # ---------------------------------------------------------
+
 MODERATE_RISK_KEYWORDS = [
-    "nyeri parah", "tidak tertahankan", "makin parah", "semakin parah", "berulang", 
-    "kambuh", "sudah 3 hari", "lemas", "kurang cairan", "pusing berputar", "vertigo", 
-    "lemas sekali", "tidak kunjung sembuh", "sudah lama", "gejala menetap",
-    "badan lunglai", "tidak bertenaga", "semakin lemas"
+
+    # Intensitas meningkat
+    "nyeri parah", "nyeri berat", "sakit sekali", "tidak tertahankan",
+    "makin parah", "semakin parah", "tambah parah", "memberat",
+    "rasa sakit hebat tapi tertahan", "sakitnya kuat",
+
+    # Durasi lama / tidak membaik
+    "sudah 3 hari", "lebih dari 3 hari", "4 hari", "5 hari", "berhari-hari",
+    "sudah lama", "lama tidak sembuh", "tidak kunjung sembuh",
+    "belum membaik", "tidak ada perubahan", "gejala menetap",
+    "tidak hilang-hilang",
+
+    # Berulang / kambuh
+    "berulang", "kambuh", "sering kambuh", "datang pergi",
+    "hilang timbul", "bolak balik", "muncul lagi", "sering muncul",
+
+    # Lemas & penurunan kondisi
+    "lemas", "lemas sekali", "semakin lemas", "badan lunglai",
+    "tidak bertenaga", "tenaga hilang", "badan drop",
+    "lesu", "letoy", "nggreges", "capek berat",
+
+    # Pusing & keseimbangan
+    "pusing berputar", "vertigo", "kepala muter",
+    "pusing saat berdiri", "kunang-kunang",
+    "kepala melayang", "kliyengan", "limbung",
+
+    # Dehidrasi / kurang cairan
+    "kurang cairan", "jarang minum", "tidak bisa minum",
+    "mulut kering", "bibir kering", "kencing sedikit",
+    "air kencing sedikit", "warna kencing pekat",
+    "dehidrasi", "haus terus",
+
+    # Nafsu makan & muntah ringan menetap
+    "tidak nafsu makan", "tidak mau makan",
+    "makan sedikit", "muntah terus tapi sedikit",
+    "mual tidak hilang", "eneg terus",
+
+    # Aktivitas terganggu
+    "tidak bisa aktivitas", "tidak bisa kerja",
+    "tidak bisa sekolah", "hanya bisa tiduran",
+    "aktivitas terganggu", "tidak kuat jalan",
+
+    # Respons obat buruk
+    "tidak mempan obat", "obat tidak bekerja",
+    "minum obat tidak membaik", "tidak ada efek obat",
+    "sudah minum obat tapi tetap sakit",
+
+    # Tidur & istirahat
+    "tidak bisa tidur karena sakit",
+    "sulit tidur karena nyeri",
+    "tidur tidak nyenyak",
+
+    # Khusus anak & lansia (tanpa red flag)
+    "anak rewel terus", "anak lemas", "anak tidak aktif",
+    "lansia lemah", "orang tua lemas terus"
 ]
 
 def detect_danger_category(complaint_text: str) -> Optional[str]:

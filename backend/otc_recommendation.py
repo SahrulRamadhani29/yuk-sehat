@@ -16,111 +16,152 @@ from typing import List, Dict
 # OTC RECOMMENDATION MAP DENGAN VARIASI LENGKAP
 # ---------------------------------------------------------
 # Kunci di sini harus selaras dengan SYMPTOM_MAP di symptom_catalog.py
+# otc_recommendation.py
 OTC_MAP: Dict[str, List[str]] = {
-
-    "demam_ringan": [
-        "Paracetamol 500 mg: 1 tablet setiap 6–8 jam (maks 4.000 mg/hari)",
-        "Kompres hangat di area lipatan tubuh (ketiak/leher) selama 15 menit",
-        "Gunakan pakaian tipis berbahan katun dan jaga sirkulasi udara ruangan",
-        "Perbanyak minum air putih (minimal 2-3 liter/hari) untuk mencegah dehidrasi",
-        "Istirahat total (Bedrest) untuk mempercepat pemulihan"
+    "pernapasan": [
+        "Sirup batuk ekspektoran atau antitusif sesuai keluhan",
+        "Tablet hisap tenggorokan (lozenges)",
+        "Minum air hangat dan perbanyak cairan",
+        "Uap air hangat untuk melegakan hidung",
+        "Gunakan masker dan istirahat cukup"
     ],
-
-    "batuk_pilek": [
-        "Obat Batuk Hitam (OBH) atau sirup batuk ekspektoran sesuai aturan pakai",
-        "Dekongestan (Pseudoefedrin) jika hidung sangat tersumbat (Hanya lingkaran biru)",
-        "Tablet hisap antiseptik (Lozenges) untuk melegakan jalan napas",
-        "Minum air hangat dan hindari gorengan, santan, atau minuman dingin",
-        "Gunakan masker dan cuci tangan rutin agar tidak menulari orang lain",
-        "Uap wajah sederhana dengan air panas untuk mengencerkan lendir"
+    "sirkulasi_jantung": [
+        "Istirahat total dan hindari aktivitas berat",
+        "Posisikan tubuh duduk atau berbaring nyaman",
+        "Hindari kopi, rokok, dan minuman berenergi",
+        "Lakukan teknik relaksasi pernapasan"
     ],
-
-    "sakit_kepala_ringan": [
-        "Paracetamol 500 mg atau Ibuprofen 400 mg (Diminum sesudah makan)",
-        "Istirahat di ruangan yang tenang, gelap (minim cahaya), dan sejuk",
-        "Pijat ringan di area pelipis atau belakang leher",
-        "Pastikan asupan cairan cukup dan hindari paparan layar gadget (HP/Laptop)",
-        "Kompres dingin di dahi untuk meredakan denyut kepala"
+    "neurologis": [
+        "Paracetamol 500 mg atau Ibuprofen 400 mg (sesudah makan)",
+        "Istirahat di ruangan tenang dan minim cahaya",
+        "Kompres dingin di dahi atau pelipis"
     ],
-
-    "nyeri_otot_ringan": [
-        "Paracetamol 500 mg atau Asam Mefenamat 500 mg (Jika nyeri terasa tajam)",
-        "Salep/Balsem otot atau gel yang mengandung Methyl Salicylate/Diclofenac",
-        "Koyo atau kompres hangat pada area yang pegal untuk relaksasi otot",
-        "Istirahatkan bagian tubuh yang nyeri dan hindari mengangkat beban berat",
-        "Lakukan peregangan (stretching) ringan jika tidak ada bengkak"
+    "pencernaan": [
+        "Antasida DOEN bila nyeri ulu hati atau kembung",
+        "Simetikon untuk mengurangi gas di perut",
+        "Makan porsi kecil tapi sering",
+        "Hindari makanan pedas, asam, dan berlemak"
     ],
-
-    "nyeri_tenggorokan": [
-        "Permen pelega tenggorokan (Lozenges) setiap 3-4 jam sekali",
-        "Kumur air garam hangat (1/2 sdt garam dalam segelas air) 3 kali sehari",
-        "Minum campuran air jeruk nipis hangat dengan madu murni",
-        "Hindari rokok, polusi udara, dan makanan yang mengiritasi (pedas/berminyak)",
-        "Istirahatkan suara (tidak banyak bicara) jika terasa serak"
+    "tenggorokan": [
+        "Permen pelega tenggorokan (lozenges)",
+        "Kumur air garam hangat 2–3 kali sehari",
+        "Minum air hangat atau madu"
     ],
-
-    "sakit_gigi": [
-        "Asam Mefenamat 500 mg: 1 tablet setiap 6-8 jam (Sesudah makan)",
-        "Paracetamol 500 mg sebagai alternatif pereda nyeri jika alergi NSAID",
-        "Kumur air garam hangat untuk membersihkan sisa makanan di lubang gigi",
-        "Hindari makanan/minuman yang terlalu manis, terlalu dingin, atau keras",
-        "Kompres dingin pada pipi jika mulai terasa sedikit bengkak"
+    "hidung_sinus": [
+        "Obat semprot hidung saline (air garam steril)",
+        "Uap air hangat untuk melegakan sumbatan",
+        "Cukupi asupan cairan"
     ],
-
-    "diare_ringan": [
-        "Oralit: 1 sachet (larutkan dalam 200 ml air) setiap kali sehabis BAB",
-        "Tablet Zinc 20 mg: 1 tablet sehari selama 10 hari (Penting untuk usus)",
-        "Attapulgite atau Karbon Aktif untuk menyerap racun dan memadatkan feses",
-        "Makan makanan lunak (bubur ayam/pisang/roti tawar) dan hindari susu/kafein",
-        "Jaga kebersihan tangan sebelum dan sesudah makan"
+    "telinga": [
+        "Hindari memasukkan benda apapun ke telinga",
+        "Tetes telinga pelunak kotoran (jika hanya tersumbat)",
+        "Paracetamol bila nyeri ringan"
     ],
-
-    "mual_ringan": [
-        "Antasida DOEN: 1-2 tablet kunyah 1 jam sebelum makan atau saat perut kosong",
-        "Minum air jahe hangat atau teh peppermint untuk menenangkan lambung",
-        "Makan dengan porsi kecil tapi sering (misal: 5-6 kali sehari)",
-        "Hindari posisi berbaring langsung (tunggu 2 jam) setelah makan",
-        "Hindari makanan pemicu gas seperti kol, sawi, dan minuman bersoda"
+    "mata": [
+        "Tetes mata steril (artificial tears) untuk iritasi",
+        "Kompres dingin pada mata yang teriritasi",
+        "Hindari mengucek mata dengan tangan",
+        "Gunakan kacamata pelindung bila berdebu"
     ],
-
-    "masalah_kulit_ringan": [
-        "Bedak Salisil atau Losion Kalamin untuk gatal biang keringat atau biduran",
-        "Krim Antihistamin (Hanya lingkaran biru) jika gatal karena alergi gigitan serangga",
-        "Salep Antiseptik (Povidone Iodine) untuk luka lecet atau luka kecil",
-        "Jaga kulit tetap kering, bersih, dan gunakan pakaian longgar berbahan katun",
-        "Jangan menggaruk area yang gatal untuk mencegah infeksi sekunder"
+    "gigi_mulut": [
+        "Kumur air garam hangat untuk gusi bengkak",
+        "Asam Mefenamat atau Paracetamol untuk nyeri gigi",
+        "Jaga kebersihan mulut dengan sikat gigi lembut"
     ],
-
-    "sembelit_konstipasi": [
-        "Obat pencahar ringan (Laktulosa atau Bisakodil) jika tidak BAB > 3 hari",
-        "Tingkatkan konsumsi serat secara signifikan (Sayuran hijau dan buah pepaya)",
-        "Minum air putih minimal 8-10 gelas sehari secara teratur",
-        "Lakukan aktivitas fisik ringan atau jalan pagi untuk merangsang gerak usus",
-        "Jangan membiasakan menahan keinginan Buang Air Besar"
+    "kulit": [
+        "Losion kalamin atau bedak salisil untuk gatal",
+        "Krim antihistamin topikal untuk alergi kulit",
+        "Jaga kulit tetap kering dan bersih"
     ],
-    
-    "kesehatan_mental_ringan": [
-        "Lakukan teknik pernapasan dalam (4-7-8) untuk meredakan kecemasan",
-        "Kurangi asupan kafein (kopi/teh) dan gula yang dapat memicu detak jantung",
-        "Lakukan rutinitas 'Sleep Hygiene': Matikan gadget 1 jam sebelum tidur",
-        "Tuliskan perasaan Anda di buku jurnal (Journaling) untuk meredakan beban pikiran",
-        "Dengarkan musik relaksasi atau suara alam untuk membantu tidur"
+    "alergi": [
+        "Cetirizine 10 mg 1x sehari",
+        "Hindari pemicu alergi (debu/makanan/dingin)",
+        "Kompres dingin pada area gatal/bentol"
     ],
-
-    "kesehatan_ibu_anak": [
-        "Kompres hangat pada perut bawah untuk meredakan nyeri haid (Dismenore)",
-        "Gunakan krim barrier (Zinc Oxide) untuk ruam popok pada bayi",
-        "Untuk mual kehamilan: Konsumsi biskuit gandum atau crackers saat bangun pagi",
-        "Paracetamol (Hanya jika sangat perlu) adalah pilihan teraman untuk ibu hamil",
-        "Konsumsi banyak cairan dan makanan bergizi untuk mendukung produksi ASI",
-        "PENTING: Segera hubungi bidan/dokter jika ada pendarahan atau kontraksi hebat"
+    "demam_infeksi": [
+        "Paracetamol 500 mg: 1 tablet tiap 6–8 jam",
+        "Kompres hangat pada ketiak atau leher",
+        "Perbanyak minum air putih"
     ],
-    
-    "alergi_ringan": [
-        "Cetirizine 10 mg: 1 tablet sehari (Perhatian: Dapat menyebabkan kantuk)",
-        "Hindari pemicu alergi yang sudah diketahui (Debu, bulu hewan, suhu dingin)",
-        "Kompres dingin atau mandi air biasa pada area kulit yang bentol/merah",
-        "Gunakan sabun bayi yang tidak mengandung parfum jika kulit sangat sensitif"
+    "otot_sendi": [
+        "Salep/balsem otot pada area nyeri",
+        "Kompres hangat atau koyo",
+        "Istirahatkan area yang nyeri"
+    ],
+    "saluran_kemih": [
+        "Perbanyak minum air putih",
+        "Jangan menahan buang air kecil",
+        "Paracetamol bila nyeri ringan"
+    ],
+    "reproduksi_wanita": [
+        "Paracetamol atau Ibuprofen untuk nyeri haid",
+        "Kompres hangat perut bawah",
+        "Istirahat cukup"
+    ],
+    "reproduksi_pria": [
+        "Gunakan pakaian dalam longgar",
+        "Istirahat dan hindari aktivitas berat",
+        "Jaga kebersihan area genital"
+    ],
+    "kia": [
+        "Paracetamol sirup sesuai dosis usia anak",
+        "Pastikan asupan ASI/minum tetap lancar",
+        "Pantau aktivitas dan suhu tubuh anak"
+    ],
+    "bayi_balita": [
+        "ASI lebih sering atau susu formula sesuai jadwal",
+        "Oralit bila diare ringan/BAB cair",
+        "Pantau tanda dehidrasi (ubun-ubun cekung/lemas)"
+    ],
+    "lansia": [
+        "Minum air putih sedikit tapi sering",
+        "Makan makanan lunak dan bergizi",
+        "Pantau kondisi umum dan kesadaran"
+    ],
+    "mental": [
+        "Latihan pernapasan relaksasi (box breathing)",
+        "Kurangi kafein dan gula",
+        "Istirahat cukup dan teratur"
+    ],
+    "tidur": [
+        "Hindari gadget 1 jam sebelum tidur",
+        "Minum teh herbal hangat (chamomile) tanpa kafein",
+        "Ciptakan suasana kamar yang gelap dan tenang"
+    ],
+    "metabolik": [
+        "Atur pola makan rendah gula",
+        "Minum air putih cukup",
+        "Istirahat cukup"
+    ],
+    "hormonal": [
+        "Tidur teratur dan olahraga ringan",
+        "Kurangi stres berlebih",
+        "Makan bergizi seimbang"
+    ],
+    "keracunan": [
+        "Minum air putih perlahan tapi sering",
+        "Hentikan konsumsi pemicu segera",
+        "Istirahat dan pantau tanda bahaya"
+    ],
+    "gigitan_sengatan": [
+        "Cuci area gigitan dengan sabun dan air",
+        "Kompres dingin untuk kurangi bengkak",
+        "Losion kalamin untuk rasa gatal"
+    ],
+    "luka_bakar": [
+        "Aliri luka dengan air mengalir suhu normal 15 menit",
+        "Tutup dengan kasa bersih tanpa ditekan",
+        "Jangan oles odol atau mentega"
+    ],
+    "kelelahan": [
+        "Istirahat cukup dan kurangi beban kerja",
+        "Cukupi kebutuhan cairan dan nutrisi",
+        "Multivitamin bila perlu"
+    ],
+    "pasca_prosedur": [
+        "Jaga area bekas tindakan tetap kering",
+        "Paracetamol bila nyeri ringan",
+        "Ikuti saran dokter yang menangani"
     ]
 }
 
