@@ -1,18 +1,28 @@
+# database.py
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Ambil URL dari Render, jika tidak ada pakai SQLite lokal
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./triage.db")
+# 1. Ambil URL dari Environment Variable (Neon/Render)
+# Kita hapus default "sqlite:///..." agar sistem tidak diam-diam pakai SQLite
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Fix untuk format URL Postgres
+if not DATABASE_URL:
+    raise ValueError(
+        "FATAL ERROR: DATABASE_URL tidak ditemukan! "
+        "Pastikan Anda sudah mengatur Environment Variable di Render atau file .env Anda."
+    )
+
+# 2. Fix untuk format URL Postgres (Neon sering pakai postgres://)
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-engine_args = {}
-if DATABASE_URL.startswith("sqlite"):
-    engine_args["connect_args"] = {"check_same_thread": False}
+# 3. Konfigurasi Engine Khusus PostgreSQL
+# Kita hapus 'connect_args' karena itu hanya untuk SQLite
+engine = create_engine(
+    DATABASE_URL, 
+    pool_pre_ping=True  # Sangat disarankan untuk Neon agar koneksi tidak sering terputus (idle)
+)
 
-engine = create_engine(DATABASE_URL, **engine_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
