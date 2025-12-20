@@ -3,8 +3,8 @@ import requests
 import re
 
 # URL Backend (Sesuaikan jika sudah deploy ke Render)
-URL_BASE = "http://127.0.0.1:8000"
-##URL_BASE = "https://yuk-sehat.onrender.com"
+# URL_BASE = "http://127.0.0.1:8000"
+URL_BASE = "https://yuk-sehat.onrender.com"
 
 URL_TRIAGE = f"{URL_BASE}/triage"
 URL_CHECK_NIK = f"{URL_BASE}/check-nik"

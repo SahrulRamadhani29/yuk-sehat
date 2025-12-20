@@ -4,7 +4,8 @@ import re
 from dotenv import load_dotenv
 
 load_dotenv()
-from fastapi import FastAPI
+# MODIFIKASI: Menambahkan Depends dan HTTPException yang diperlukan untuk get_db dan check_nik
+from fastapi import FastAPI, Depends, HTTPException
 from database import SessionLocal, engine, Base
 from models import TriageLog
 from schemas import TriageInput, TriageResponse 
@@ -15,6 +16,8 @@ from symptom_catalog import detect_danger_category, map_symptoms
 from mistral_ai import parse_complaint_with_ai
 from otc_recommendation import get_otc_recommendations
 from fastapi.middleware.cors import CORSMiddleware
+# MODIFIKASI: Menambahkan Session untuk type hinting database
+from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
 app = FastAPI(title="YUK SEHAT – AI Driven Exploratory Triage", version="3.0")
@@ -27,6 +30,16 @@ app.add_middleware(
 )
 
 Base.metadata.create_all(bind=engine)
+
+# =========================================================
+# MODIFIKASI: MENAMBAHKAN FUNGSI get_db UNTUK KONEKSI DATABASE
+# =========================================================
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 # =========================================================
 # LOGIKA EKSTRAKSI DURASI (DARI KELUHAN)
@@ -110,19 +123,20 @@ def save_triage_log(data: TriageInput, result: str, is_danger: bool, is_risk: bo
 # ROUTES UTAMA
 # =========================================================
 
-    @app.get("/check-nik/{nik}")
-    def check_nik(nik: str, db: Session = Depends(get_db)):
-        # Ambil log terbaru agar mendapatkan usia terakhir yang diinput pasien
-        last_log = db.query(TriageLog).filter(TriageLog.nik == nik).order_by(desc(TriageLog.created_at)).first()
-        
-        if last_log:
-            return {
-                "exists": True,
-                "age": last_log.age, # Kirimkan usia yang tersimpan di DB
-                "nickname": "Pasien" 
-            }
-        
-        return {"exists": False, "age": 0}
+# MODIFIKASI: Memperbaiki indentasi dan logika endpoint check_nik agar sejajar dengan route lainnya
+@app.get("/check-nik/{nik}")
+def check_nik(nik: str, db: Session = Depends(get_db)):
+    # Ambil log terbaru agar mendapatkan usia terakhir yang diinput pasien
+    last_log = db.query(TriageLog).filter(TriageLog.nik == nik).order_by(desc(TriageLog.created_at)).first()
+    
+    if last_log:
+        return {
+            "exists": True,
+            "age": last_log.age, # Kirimkan usia yang tersimpan di DB
+            "nickname": "Pasien" 
+        }
+    
+    return {"exists": False, "age": 0}
 
 @app.post("/triage", response_model=TriageResponse)
 async def triage_endpoint(data: TriageInput):

@@ -9,42 +9,46 @@ export const useProfile = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Load data profil saat pertama kali aplikasi dibuka
   useEffect(() => {
     setProfiles(storage.getProfiles());
     setActiveUser(storage.getActiveUser());
   }, []);
 
-  // Fungsi untuk menambah profil baru setelah validasi NIK ke backend
   const addProfile = async (nickname, nik) => {
     setLoading(true);
     setError(null);
     try {
-      // 1. Cek validasi NIK ke API Backend
-      await validateNik(nik); 
-      
-      // 2. Jika valid, simpan ke localStorage
+      // 1. Simpan ke HP DULUAN agar user tidak merasa error
       storage.saveProfile(nickname, nik);
       
-      // 3. Update state lokal
-      const updatedProfiles = storage.getProfiles();
-      setProfiles(updatedProfiles);
+      // 2. Coba sinkronisasi dengan Backend Render secara "silent"
+      // Jika server lambat, data sudah aman di HP user
+      try {
+        const response = await validateNik(nik);
+        if (response && response.age) {
+          // Update usia jika di database backend ternyata sudah ada data lama
+          storage.saveProfile(nickname, nik, response.age); 
+        }
+      } catch (silentErr) {
+        console.warn("Backend Render lambat, menggunakan data lokal.");
+      }
+      
+      // 3. Update tampilan daftar profil
+      setProfiles(storage.getProfiles());
       return true;
     } catch (err) {
-      setError(err?.message || "NIK tidak valid atau server bermasalah");
+      setError("Gagal menyimpan profil.");
       return false;
     } finally {
       setLoading(false);
     }
   };
 
-  // Fungsi untuk memilih profil (Login)
   const selectProfile = (profile) => {
     storage.setActiveUser(profile);
     setActiveUser(profile);
   };
 
-  // Fungsi untuk hapus profil
   const removeProfile = (nik) => {
     storage.deleteProfile(nik);
     setProfiles(storage.getProfiles());
