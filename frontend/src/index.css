@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  /* Animasi halus saat form muncul dari bawah */
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out forwards;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+}
+
+/* Base Styles untuk kesan aplikasi mobile */
+body {
+  @apply bg-gray-100 antialiased overflow-x-hidden;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Scrollbar halus untuk area chat */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-200 rounded-full;
+}
