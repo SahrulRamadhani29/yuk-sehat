@@ -6,7 +6,7 @@ import MedicineList from '../components/triage/MedicineList';
 import AiReason from '../components/triage/AiReason';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
-import { Share2, Home, AlertTriangle } from 'lucide-react';
+import { Share2, Home, AlertTriangle, MapPin, Phone } from 'lucide-react';
 
 const ResultPage = () => {
   const location = useLocation();
@@ -25,6 +25,10 @@ const ResultPage = () => {
     if (urgency === 'HIGH') return 'danger';
     if (urgency === 'MEDIUM') return 'warning';
     return 'default';
+  };
+
+  const openMapSearch = (query) => {
+    window.open(`https://www.google.com/maps/search/${encodeURIComponent(query)}`, '_blank');
   };
 
   return (
@@ -61,12 +65,72 @@ const ResultPage = () => {
               <h3 className="font-bold">Tindakan Segera:</h3>
             </div>
             <p className="text-sm opacity-90 leading-relaxed">
-              Kondisi Anda memerlukan penanganan medis profesional segera. Mohon segera hubungi ambulans (119) atau menuju ke Instalasi Gawat Darurat (IGD) rumah sakit terdekat.
+              Kondisi Anda memerlukan penanganan medis profesional segera. Mohon segera hubungi layanan darurat atau menuju Puskesmas terdekat.
             </p>
+
+            <div className="mt-4 space-y-3">
+              <Button
+                fullWidth
+                variant="danger"
+                onClick={() => window.open('tel:119')}
+              >
+                <Phone size={16} className="mr-2" />
+                Hubungi 119
+              </Button>
+
+              <Button
+                fullWidth
+                variant="outline"
+                onClick={() => openMapSearch('puskesmas terdekat')}
+              >
+                <MapPin size={16} className="mr-2" />
+                Puskesmas Terdekat
+              </Button>
+            </div>
           </div>
         )}
 
-        {/* 5. Tombol Aksi Akhir */}
+        {/* 5. Tombol Aksi Tambahan Berdasarkan Status */}
+        {data.triage_result === 'HIJAU' && (
+          <div className="pt-6">
+            <Button
+              fullWidth
+              variant="outline"
+              onClick={() => openMapSearch('apotek terdekat')}
+            >
+              <MapPin size={16} className="mr-2" />
+              Apotek Terdekat
+            </Button>
+          </div>
+        )}
+
+        {data.triage_result === 'KUNING' && (
+          <div className="pt-6 space-y-3">
+            <Button
+              fullWidth
+              variant="outline"
+              onClick={() => openMapSearch('puskesmas terdekat')}
+            >
+              <MapPin size={16} className="mr-2" />
+              Puskesmas Terdekat
+            </Button>
+
+            <Button
+              fullWidth
+              variant="outline"
+              onClick={() => openMapSearch('apotek terdekat')}
+            >
+              <MapPin size={16} className="mr-2" />
+              Apotek Terdekat
+            </Button>
+
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-sm text-yellow-800 leading-relaxed">
+              <strong>Perhatian:</strong> Anda harus memantau dan menyampaikan kondisi kesehatan Anda selama 24 jam ke depan.
+            </div>
+          </div>
+        )}
+
+        {/* 6. Tombol Aksi Akhir */}
         <div className="pt-8 pb-4">
           <Button variant="outline" fullWidth onClick={() => navigate('/home')}>
             Selesai & Kembali ke Home

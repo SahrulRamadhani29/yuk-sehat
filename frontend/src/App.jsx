@@ -6,6 +6,7 @@ import WelcomePage from './pages/WelcomePage';
 import HomePage from './pages/HomePage';
 import ChatPage from './pages/ChatPage';
 import ResultPage from './pages/ResultPage';
+import Dashboard from "./pages/puskesmas/Dashboard";
 import HistoryPage from './pages/HistoryPage';
 import NotFound from './pages/NotFound';
 
@@ -27,7 +28,7 @@ function App() {
         
         {/* Rute Riwayat Medis */}
         <Route path="/history" element={<HistoryPage />} />
-        
+        <Route path="/puskesmas" element={<Dashboard />} />
         {/* Penanganan Halaman Tidak Ditemukan */}
         <Route path="/404" element={<NotFound />} />
         <Route path="*" element={<Navigate to="/404" />} />

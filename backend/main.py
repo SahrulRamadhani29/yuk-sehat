@@ -134,6 +134,32 @@ def check_nik(nik: str, db: Session = Depends(get_db)):
     
     return {"exists": False, "age": 0}
 
+
+@app.get("/triage-logs")
+def get_triage_logs(db: Session = Depends(get_db)):
+    logs = (
+        db.query(TriageLog)
+        .filter(TriageLog.triage_result == "MERAH")
+        .order_by(TriageLog.created_at.desc())
+        .all()
+    )
+
+    return [
+        {
+            "id": log.id,
+            "nik": log.nik,
+            "age": log.age,
+            "duration_hours": log.duration_hours,
+            "complaint": log.complaint,
+            "category": log.category,
+            "triage_result": log.triage_result,
+            "danger_sign": log.danger_sign,
+            "risk_group": log.risk_group,
+            "created_at": log.created_at,
+        }
+        for log in logs
+    ]
+
 @app.post("/triage", response_model=TriageResponse)
 async def triage_endpoint(data: TriageInput):
     raw_first_line = data.complaint.split('\n')[0]
