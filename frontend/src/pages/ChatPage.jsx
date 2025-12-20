@@ -24,9 +24,17 @@ const ChatPage = () => {
     complaint: ''
   });
 
-  const [chatHistory, setChatHistory] = useState([
-    { text: `Halo ${activeProfile?.nickname || 'Pasien'}, saya asisten AI Yuk Sehat. Mari kita mulai pemeriksaan. Berapa usia Anda saat ini? (Contoh: 25 atau 25 tahun)`, isAi: true }
-  ]);
+// State pesan lokal dengan bubble terpisah dan baris baru
+const [chatHistory, setChatHistory] = useState([
+  { 
+    text: `Halo ${activeProfile?.nickname || 'Pasien'}, Saya Asisten AI Yuk Sehat.\nMari kita mulai pemeriksaan.`, 
+    isAi: true 
+  },
+  { 
+    text: "Berapa Usia Anda?", 
+    isAi: true 
+  }
+]);
 
   const { 
     messages: aiMessages, 
@@ -62,7 +70,7 @@ const ChatPage = () => {
       // Backend akan memproses string ini melalui Regex
       setCollectedData(prev => ({ ...prev, age: text })); 
       setTimeout(() => {
-        setChatHistory(prev => [...prev, { text: "Sudah berapa lama Anda merasakan keluhan ini? (Contoh: 12 jam atau 2 hari)", isAi: true }]);
+        setChatHistory(prev => [...prev, { text: "Sudah berapa lama Anda merasakan keluhan ini?", isAi: true }]);
         setCurrentStep('ASK_DURATION');
       }, 800);
     } 
@@ -70,7 +78,7 @@ const ChatPage = () => {
       // Kita kirim string teks apa adanya agar diekstrak oleh extract_duration_from_text di Backend
       setCollectedData(prev => ({ ...prev, duration_hours: text })); 
       setTimeout(() => {
-        setChatHistory(prev => [...prev, { text: "Apakah Anda sedang hamil atau memiliki penyakit bawaan lahir? Jawab 'Ya' atau 'Tidak'.", isAi: true }]);
+        setChatHistory(prev => [...prev, { text: "Apakah Anda sedang hamil atau memiliki penyakit bawaan lahir?", isAi: true }]);
         setCurrentStep('ASK_CONDITION');
       }, 800);
     }
