@@ -1,22 +1,18 @@
-# main.py
 import os
 import re
 from dotenv import load_dotenv
 
 load_dotenv()
-# MODIFIKASI: Menambahkan Depends dan HTTPException yang diperlukan untuk get_db dan check_nik
 from fastapi import FastAPI, Depends, HTTPException
 from database import SessionLocal, engine, Base
 from models import TriageLog
 from schemas import TriageInput, TriageResponse 
 
-# Import logika pendukung
 from rules import is_risk_group
 from symptom_catalog import detect_danger_category, map_symptoms
 from mistral_ai import parse_complaint_with_ai
 from otc_recommendation import get_otc_recommendations
 from fastapi.middleware.cors import CORSMiddleware
-# MODIFIKASI: Menambahkan Session untuk type hinting database
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
@@ -31,9 +27,6 @@ app.add_middleware(
 
 Base.metadata.create_all(bind=engine)
 
-# =========================================================
-# MODIFIKASI: MENAMBAHKAN FUNGSI get_db UNTUK KONEKSI DATABASE
-# =========================================================
 def get_db():
     db = SessionLocal()
     try:
@@ -41,11 +34,7 @@ def get_db():
     finally:
         db.close()
 
-# =========================================================
-# LOGIKA EKSTRAKSI DURASI (DARI KELUHAN)
-# =========================================================
 def extract_duration_from_text(text: str) -> int:
-    """Ekstraksi angka durasi dan konversi ke JAM."""
     if not text:
         return 0
         
@@ -61,14 +50,9 @@ def extract_duration_from_text(text: str) -> int:
         else: return val
     return 0
 
-# Tambahan Fungsi untuk Menghitung Turn Investigasi
 def count_investigation_turns(text: str) -> int:
-    """Menghitung berapa kali turn investigasi telah berlangsung."""
     return text.count("Investigasi:")
 
-# =========================================================
-# MODIFIKASI FINAL: SLOT FILLING MINIMAL (ANTI PERTANYAAN ULANG)
-# =========================================================
 def extract_answered_slots(text: str) -> dict:
     slots = {"nyeri": None}
     t = text.lower()
@@ -90,13 +74,8 @@ def extract_answered_slots(text: str) -> dict:
 
     return slots
 
-# =========================================================
-# DATABASE UTILS & HISTORY
-# =========================================================
-
 @app.get("/user-history/{nik}")
 def user_history_list(nik: str):
-    """Menampilkan daftar riwayat medis berdasarkan NIK."""
     db = SessionLocal()
     try:
         logs = db.query(TriageLog).filter(TriageLog.nik == nik)\
@@ -114,7 +93,6 @@ def user_history_list(nik: str):
         db.close()
 
 def get_patient_history_context(nik: str, limit: int = 3):
-    """Fungsi internal untuk memberikan konteks riwayat ke AI."""
     db = SessionLocal()
     try:
         history = db.query(TriageLog).filter(TriageLog.nik == nik)\
@@ -142,10 +120,6 @@ def save_triage_log(data: TriageInput, result: str, is_danger: bool, is_risk: bo
         db.commit()
     finally:
         db.close()
-
-# =========================================================
-# ROUTES UTAMA
-# =========================================================
 
 @app.get("/check-nik/{nik}")
 def check_nik(nik: str, db: Session = Depends(get_db)):
@@ -235,14 +209,15 @@ async def triage_endpoint(data: TriageInput):
     search_text = f"{initial_complaint} {patient_answers}"
     
     symptoms = map_symptoms(search_text)
-    search_keys = symptoms + [ai_category]
-    recommendations = get_otc_recommendations(search_keys) if triage_result != "MERAH" else []
 
-    final_category = ai_category
-    if final_category in ["UMUM", "umum_tidak_jelas"] and symptoms:
+    recommendations = get_otc_recommendations(symptoms) if triage_result != "MERAH" else []
+
+    if symptoms:
         final_category = symptoms[0]
-    elif final_category in ["UMUM", "umum_tidak_jelas"]:
-        final_category = rule_danger_cat or "UMUM"
+    elif rule_danger_cat:
+        final_category = rule_danger_cat
+    else:
+        final_category = ai_category
 
     save_triage_log(data, triage_result, bool(rule_danger_cat or manual_danger), risk_group, final_category)
 

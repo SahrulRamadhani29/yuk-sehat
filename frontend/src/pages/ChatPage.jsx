@@ -30,6 +30,11 @@ const ChatPage = () => {
     { text: "Apa keluhan yang Anda rasakan saat ini?", isAi: true }
   ]);
 
+  // ===============================
+  // MODIFIKASI: simpan pertanyaan AI terakhir
+  // ===============================
+  const [lastAiQuestion, setLastAiQuestion] = useState('');
+
   const { loading: aiLoading, isComplete, result, processTriage } = useTriage();
   const allMessages = chatHistory;
 
@@ -68,29 +73,53 @@ const ChatPage = () => {
       const hasDuration = /(jam|hari|minggu|bulan)/i.test(text);
       if (!hasDuration) {
         setCurrentStep('ASK_DURATION');
-        setTimeout(() => setChatHistory(prev => [...prev, { text: "Sudah berapa lama keluhan ini dirasakan?", isAi: true }]), 600);
+        setTimeout(() => {
+          const q = "Sudah berapa lama keluhan ini dirasakan?";
+          setLastAiQuestion(q);
+          setChatHistory(prev => [...prev, { text: q, isAi: true }]);
+        }, 600);
       } else if (collectedData.age === 0) {
         setCurrentStep('ASK_AGE');
-        setTimeout(() => setChatHistory(prev => [...prev, { text: "Berapa Usia Anda saat ini?", isAi: true }]), 600);
+        setTimeout(() => {
+          const q = "Berapa Usia Anda saat ini?";
+          setLastAiQuestion(q);
+          setChatHistory(prev => [...prev, { text: q, isAi: true }]);
+        }, 600);
       } else {
         setCurrentStep('ASK_CONDITION');
-        setTimeout(() => setChatHistory(prev => [...prev, { text: "Apakah Anda sedang hamil atau memiliki penyakit bawaan? (Ya/Tidak)", isAi: true }]), 600);
+        setTimeout(() => {
+          const q = "Apakah Anda sedang hamil atau memiliki penyakit bawaan? (Ya/Tidak)";
+          setLastAiQuestion(q);
+          setChatHistory(prev => [...prev, { text: q, isAi: true }]);
+        }, 600);
       }
     }
     else if (currentStep === 'ASK_DURATION') {
       if (collectedData.age === 0) {
         setCurrentStep('ASK_AGE');
-        setTimeout(() => setChatHistory(prev => [...prev, { text: "Berapa Usia Anda saat ini?", isAi: true }]), 600);
+        setTimeout(() => {
+          const q = "Berapa Usia Anda saat ini?";
+          setLastAiQuestion(q);
+          setChatHistory(prev => [...prev, { text: q, isAi: true }]);
+        }, 600);
       } else {
         setCurrentStep('ASK_CONDITION');
-        setTimeout(() => setChatHistory(prev => [...prev, { text: "Apakah Anda sedang hamil atau memiliki penyakit bawaan? (Ya/Tidak)", isAi: true }]), 600);
+        setTimeout(() => {
+          const q = "Apakah Anda sedang hamil atau memiliki penyakit bawaan? (Ya/Tidak)";
+          setLastAiQuestion(q);
+          setChatHistory(prev => [...prev, { text: q, isAi: true }]);
+        }, 600);
       }
     }
     else if (currentStep === 'ASK_AGE') {
       const numAge = parseInt(text.replace(/[^0-9]/g, '')) || 0;
       setCollectedData(prev => ({ ...prev, age: numAge }));
       setCurrentStep('ASK_CONDITION');
-      setTimeout(() => setChatHistory(prev => [...prev, { text: "Apakah Anda sedang hamil atau memiliki penyakit bawaan? (Ya/Tidak)", isAi: true }]), 600);
+      setTimeout(() => {
+        const q = "Apakah Anda sedang hamil atau memiliki penyakit bawaan? (Ya/Tidak)";
+        setLastAiQuestion(q);
+        setChatHistory(prev => [...prev, { text: q, isAi: true }]);
+      }, 600);
     } 
     else if (currentStep === 'ASK_CONDITION') {
       const isSpec = text.toLowerCase().includes('ya');
@@ -100,23 +129,27 @@ const ChatPage = () => {
 
       const q = await processTriage(finalData.complaint, finalData, []);
       if (q) {
+        setLastAiQuestion(q);
         setChatHistory(prev => [...prev, { text: q, isAi: true }]);
       }
     }
-else {
-  // 🔥 SOLUSI: tambahkan jawaban user ke complaint
-  const updatedComplaint =
-    collectedData.complaint + "\nJawaban Pasien: " + text;
+    else {
+      // =================================================
+      // MODIFIKASI FINAL: SAMAKAN LOOP DENGAN chat_client.py
+      // =================================================
+      const appendedComplaint =
+        collectedData.complaint +
+        `\nInvestigasi: ${lastAiQuestion}\nJawaban Pasien: ${text}`;
 
-  const updatedData = { ...collectedData, complaint: updatedComplaint };
-  setCollectedData(updatedData);
+      const updatedData = { ...collectedData, complaint: appendedComplaint };
+      setCollectedData(updatedData);
 
-  const q = await processTriage(updatedComplaint, updatedData, []);
-  if (q) {
-    setChatHistory(prev => [...prev, { text: q, isAi: true }]);
-  }
-}
-
+      const q = await processTriage(appendedComplaint, updatedData, []);
+      if (q) {
+        setLastAiQuestion(q);
+        setChatHistory(prev => [...prev, { text: q, isAi: true }]);
+      }
+    }
   };
 
   return (
