@@ -30,8 +30,9 @@ def parse_complaint_with_ai(text: str, age: int, is_risk: bool, duration: int, i
         "5. **INTERAKTIF**: Jangan tanya 'Apakah sakit?', tapi tanyakan 'Ceritakan seperti apa rasa sakit yang Anda rasakan?' agar pasien mendeskripsikan kondisinya.\n"
         "6. **ANTI-LOOP**: Periksa bagian [JAWABAN PASIEN]. Jika informasi sudah ada, dilarang bertanya lagi.\n"
         "7. **BATAS PERTANYAAN**: Maksimal 2 pertanyaan dalam satu turn.\n"
-        "8. **HARD STOP**: Jika sudah 2-3 turn atau gejala sudah jelas, set 'needs_follow_up': false.\n\n"
+        "8. MINIMUM INVESTIGASI: Wajib tanyakan minimal 2-3 pertanyaan mendalam (seperti lokasi spesifik, gejala penyerta, atau intensitas) sebelum memberikan hasil akhir, kecuali ada tanda bahaya nyata."
 
+            "STOP PERTANYAAN APAPUN LAGI SETELAH 3-5 PERTANYAAANNN!!!!!!!!"
         "## FORMAT JSON WAJIB\n"
         "{\n"
         "  \"urgency_level\": \"HIGH/MEDIUM/LOW\",\n"

@@ -36,7 +36,7 @@ const ResultPage = () => {
             <Home size={20} />
           </button>
           <Badge variant={getBadgeVariant(data.ai_analysis?.urgency)}>
-            Kategori: {data.category?.replace('_', ' ')}
+            Kategori: {data.category?.replace(/_/g, ' ').toUpperCase()}
           </Badge>
           <button className="p-2 bg-gray-50 rounded-full text-gray-400">
             <Share2 size={20} />
@@ -73,7 +73,7 @@ const ResultPage = () => {
           </Button>
           <p className="text-[10px] text-gray-400 text-center mt-4 px-4 leading-tight italic">
             *Hasil ini bersifat informatif berdasarkan data yang Anda berikan. 
-            Jangan menunda pemeriksaan fisik jika gejala memburuk.
+            Jangan menunda pemeriksaan fisik jika gejala memhuruk.
           </p>
         </div>
       </div>

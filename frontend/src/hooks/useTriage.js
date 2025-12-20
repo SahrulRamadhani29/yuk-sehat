@@ -1,55 +1,48 @@
-// src/hooks/useTriage.js
 import { useState } from 'react';
 import { submitTriage } from '../services/triageService';
 
 export const useTriage = () => {
-  const [messages, setMessages] = useState([]); // Daftar percakapan chat
+  const [messages, setMessages] = useState([]); 
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null); // Hasil akhir (MERAH/KUNING/HIJAU)
+  const [result, setResult] = useState(null); 
   const [isComplete, setIsComplete] = useState(false);
 
-  /**
-   * FUNGSI UTAMA: MENGIRIM KELUHAN/JAWABAN
-   * Digunakan baik untuk input awal maupun saat chat investigasi
-   */
-  const processTriage = async (userInput, userData) => {
+  const processTriage = async (userInput, userData, currentHistory) => {
     setLoading(true);
-    
-    // 1. Tambahkan pesan user ke daftar chat di UI
-    const newUserMessage = { text: userInput, isAi: false };
-    setMessages(prev => [...prev, newUserMessage]);
 
     try {
-      // 2. Siapkan Payload untuk Backend
-      // Kita gabungkan chat sebelumnya agar AI tidak lupa konteks
-      const chatHistory = messages.map(m => (m.isAi ? `Investigasi: ${m.text}` : `Jawaban: ${m.text}`)).join("\n");
-      const fullComplaint = chatHistory ? `${chatHistory}\nJawaban: ${userInput}` : userInput;
+      // MODIFIKASI: Gunakan label "Investigasi:" agar sinkron dengan count_investigation_turns di main.py
+      const formattedHistory = currentHistory.map(m => (
+        m.isAi ? `Investigasi: ${m.text}` : `Jawaban Pasien: ${m.text}`
+      )).join("\n");
+
+      const finalComplaint = formattedHistory 
+        ? `${formattedHistory}\nJawaban Pasien: ${userInput}` 
+        : `Jawaban Pasien: ${userInput}`;
 
       const payload = {
         nik: userData.nik,
-        age: userData.age || 0,
-        complaint: fullComplaint,
+        age: parseInt(userData.age) || 0,
+        complaint: finalComplaint,
         duration_hours: userData.duration_hours || 0,
         pregnant: userData.pregnant || false,
         comorbidity: userData.comorbidity || false,
         danger_sign: userData.danger_sign || false
       };
 
-      // 3. Tembak API /triage
       const data = await submitTriage(payload);
 
-      if (data.status === "INCOMPLETE") {
-        // AI masih bertanya
-        const aiQuestion = data.follow_up_questions[0]?.q || "Bisa jelaskan lebih lanjut?";
-        setMessages(prev => [...prev, { text: aiQuestion, isAi: true }]);
-      } else {
-        // AI sudah selesai menganalisis (COMPLETE)
+      if (data.status === "COMPLETE") {
         setResult(data);
         setIsComplete(true);
+      } else {
+        // Tambahkan pesan AI baru ke state messages dengan label Investigasi untuk turn berikutnya
+        const aiQuestion = data.follow_up_questions[0]?.q || "Bisa jelaskan lebih lanjut?";
+        setMessages(prev => [...prev, { text: userInput, isAi: false }, { text: aiQuestion, isAi: true }]);
       }
     } catch (error) {
       console.error("Triage Error:", error);
-      setMessages(prev => [...prev, { text: "Maaf, terjadi kendala teknis. Mohon coba lagi.", isAi: true }]);
+      setMessages(prev => [...prev, { text: userInput, isAi: false }, { text: "Maaf, kendala koneksi.", isAi: true }]);
     } finally {
       setLoading(false);
     }

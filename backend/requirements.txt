@@ -7,3 +7,4 @@ mistralai
 psycopg2-binary
 pytz
 requests
+thefuzz

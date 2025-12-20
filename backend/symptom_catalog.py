@@ -1,5 +1,6 @@
 # symptom_catalog.py
 from typing import Optional
+from thefuzz import fuzz
 
 # ---------------------------------------------------------
 # 1. MILD–MODERATE SYMPTOMS (Kategori Hijau/Kuning)
@@ -334,9 +335,13 @@ MODERATE_RISK_KEYWORDS = [
 def detect_danger_category(complaint_text: str) -> Optional[str]:
     if not complaint_text: return None
     text = complaint_text.lower()
+    
     for category, keywords in DANGER_CATEGORIES.items():
-        if any(keyword in text for keyword in keywords):
-            return category
+        for keyword in keywords:
+            # Menggunakan partial_ratio agar "gigitan ular" cocok dengan "digigit ular"
+            # Skor 85 adalah ambang batas kemiripan yang cukup aman
+            if fuzz.partial_ratio(keyword, text) > 85:
+                return category
     return None
 
 def map_symptoms(complaint_text: str) -> list[str]:

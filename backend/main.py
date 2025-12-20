@@ -48,8 +48,13 @@ def extract_duration_from_text(text: str) -> int:
         else: return val
     return 0
 
+# Tambahan Fungsi untuk Menghitung Turn Investigasi
+def count_investigation_turns(text: str) -> int:
+    """Menghitung berapa kali turn investigasi telah berlangsung."""
+    return text.count("Investigasi:")
+
 # =========================================================
-# DATABASE UTILS & HISTORY (KITA KEMBALIKAN DI SINI)
+# DATABASE UTILS & HISTORY
 # =========================================================
 
 @app.get("/user-history/{nik}")
@@ -92,8 +97,8 @@ def save_triage_log(data: TriageInput, result: str, is_danger: bool, is_risk: bo
             complaint=data.complaint,
             duration_hours=data.duration_hours,
             triage_result=result,
-            danger_sign=is_danger,  # Sesuai dengan models.py
-            risk_group=is_risk,     # Sesuai dengan models.py
+            danger_sign=is_danger,
+            risk_group=is_risk,
             category=category
         )
         db.add(new_log)
@@ -105,28 +110,35 @@ def save_triage_log(data: TriageInput, result: str, is_danger: bool, is_risk: bo
 # ROUTES UTAMA
 # =========================================================
 
-@app.get("/check-nik/{nik}")
-def check_nik(nik: str):
-    db = SessionLocal()
-    last_log = db.query(TriageLog).filter(TriageLog.nik == nik).order_by(TriageLog.created_at.desc()).first()
-    db.close()
-    if last_log:
-        return {"exists": True, "age": last_log.age}
-    return {"exists": False, "age": None}
+    @app.get("/check-nik/{nik}")
+    def check_nik(nik: str, db: Session = Depends(get_db)):
+        # Ambil log terbaru agar mendapatkan usia terakhir yang diinput pasien
+        last_log = db.query(TriageLog).filter(TriageLog.nik == nik).order_by(desc(TriageLog.created_at)).first()
+        
+        if last_log:
+            return {
+                "exists": True,
+                "age": last_log.age, # Kirimkan usia yang tersimpan di DB
+                "nickname": "Pasien" 
+            }
+        
+        return {"exists": False, "age": 0}
 
 @app.post("/triage", response_model=TriageResponse)
 async def triage_endpoint(data: TriageInput):
-    # 1. Ekstraksi Durasi Otomatis dari Teks
-    if data.duration_hours <= 0:
-        data.duration_hours = extract_duration_from_text(data.complaint)
-
-    # 2. Penyiapan Konteks
+    # 1. Inisialisasi Variabel Awal (Mencegah Error di Scope)
     risk_group = is_risk_group(data.age, data.pregnant, data.comorbidity)
     rule_danger_cat = detect_danger_category(data.complaint)
     manual_danger = data.danger_sign
-    user_history = get_patient_history_context(data.nik)
+    symptoms = []
+    
+    # 2. Ekstraksi Durasi Otomatis dari Teks (DIPERBAIKI)
+    # Selalu coba ekstrak dari teks jika input manual adalah 0
+    if data.duration_hours <= 0:
+        data.duration_hours = extract_duration_from_text(data.complaint)
 
-    # --- BAGIAN MODIFIKASI: PEMBERIAN LABEL JAWABAN AGAR AI TIDAK LOOPING ---
+    # 3. Penyiapan Konteks Investigasi
+    user_history = get_patient_history_context(data.nik)
     current_chat = data.complaint.replace("Investigasi:", "\n[PERTANYAAN AI]:").replace("Jawaban:", "\n[JAWABAN PASIEN]:")
 
     full_context_for_ai = (
@@ -136,7 +148,7 @@ async def triage_endpoint(data: TriageInput):
         f"--- INSTRUKSI: JANGAN TANYA HAL YANG SUDAH ADA DI [JAWABAN PASIEN] DI ATAS! ---"
     )
 
-    # 3. Proses Investigasi AI
+    # 4. Proses Investigasi AI & Paksa Follow-Up
     try:
         ai_res = parse_complaint_with_ai(
             text=full_context_for_ai,
@@ -151,45 +163,55 @@ async def triage_endpoint(data: TriageInput):
         ai_reason = ai_res.get("reason", "Proses AI selesai.")
         needs_follow_up = ai_res.get("needs_follow_up", False)
         
-        follow_up_qs = [
-            q for q in ai_res.get("follow_up_questions", [])
-            if not any(w in q.get('q','').lower() for w in ["usia", "umur", "jam", "lama", "kapan"])
-        ]
+        # Hitung Turn Saat Ini
+        current_turns = count_investigation_turns(data.complaint)
 
-        if needs_follow_up and follow_up_qs:
-            return TriageResponse(status="INCOMPLETE", message="AI mengeksplorasi...", follow_up_questions=follow_up_qs)
+        # Filter Pertanyaan Unik
+        raw_qs = ai_res.get("follow_up_questions", [])
+        follow_up_qs = []
+        for q_obj in raw_qs:
+            q_text = q_obj.get('q', '')
+            if q_text.lower() not in data.complaint.lower() and not any(w in q_text.lower() for w in ["usia", "umur", "jam", "lama", "kapan"]):
+                follow_up_qs.append(q_obj)
+
+        # LOGIKA PAKSA: Jika bukan bahaya nyata (MERAH) dan turn < 4, paksa INCOMPLETE
+        is_real_danger = bool(rule_danger_cat or manual_danger)
+        if not is_real_danger and current_turns < 4 and follow_up_qs:
+            return TriageResponse(status="INCOMPLETE", message="AI mengeksplorasi lebih dalam...", follow_up_questions=follow_up_qs[:1])
 
     except Exception as e:
-        print(f"AI Error: {e}")
-        ai_urgency, ai_category, ai_reason = "LOW", "UMUM", "Gagal memproses AI."
+        ai_urgency, ai_category, ai_reason = "LOW", "UMUM", f"Gagal memproses AI: {str(e)}"
 
-    # 4. Penentuan Hasil Akhir (Triase)
-    is_immediate_danger = bool(rule_danger_cat or ai_urgency == "HIGH" or manual_danger)
-    if is_immediate_danger:
+# 5. Penentuan Hasil Akhir (Triase) - LOGIKA BARU
+    # KONDISI MERAH:
+    # Jika Katalog mendeteksi bahaya ATAU tombol manual ditekan ATAU AI bilang HIGH
+    if rule_danger_cat or manual_danger or ai_urgency == "HIGH":
         triage_result = "MERAH"
+    # KONDISI KUNING:
+    # Jika AI bilang MEDIUM ATAU kelompok risiko ATAU durasi > 48 jam
     elif ai_urgency == "MEDIUM" or risk_group or (data.duration_hours > 48):
         triage_result = "KUNING"
+    # KONDISI HIJAU:
     else:
         triage_result = "HIJAU"
 
-    # 5. REKOMENDASI OBAT & KATEGORI (DIOPTIMALKAN)
+    # 6. Rekomendasi & Pemetaan Gejala
     patient_answers = " ".join(re.findall(r"Jawaban Pasien: (.*)", data.complaint))
     initial_complaint = data.complaint.split("\n")[0]
     search_text = f"{initial_complaint} {patient_answers}"
-
-    symptoms = map_symptoms(search_text) 
+    
+    symptoms = map_symptoms(search_text)
     search_keys = symptoms + [ai_category] 
     recommendations = get_otc_recommendations(search_keys) if triage_result != "MERAH" else []
 
-    # Perbaikan: Gunakan deteksi manual jika kategori AI tidak spesifik
     final_category = ai_category
     if final_category in ["UMUM", "umum_tidak_jelas"] and symptoms:
         final_category = symptoms[0]
     elif final_category in ["UMUM", "umum_tidak_jelas"]:
         final_category = rule_danger_cat or "UMUM"
 
-    # 6. Simpan Log
-    save_triage_log(data, triage_result, is_immediate_danger, risk_group, final_category)
+    # 7. Simpan Log & Return
+    save_triage_log(data, triage_result, bool(rule_danger_cat or manual_danger), risk_group, final_category)
 
     return TriageResponse(
         status="COMPLETE",
