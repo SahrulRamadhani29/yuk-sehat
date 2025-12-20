@@ -159,9 +159,11 @@ async def triage_endpoint(data: TriageInput):
     user_history = get_patient_history_context(data.nik)
     current_chat = data.complaint.replace("Investigasi:", "\n[PERTANYAAN AI]:").replace("Jawaban:", "\n[JAWABAN PASIEN]:")
 
-    full_context_for_ai = (
+    # MODIFIKASI: Gunakan Enhanced AI Input agar AI fokus pada keluhan utama namun tetap melihat riwayat chat
+    enhanced_context_for_ai = (
+        f"KELUHAN UTAMA PASIEN: {original_complaint}\n\n"
+        f"RIWAYAT PERCAKAPAN LENGKAP:\n"
         f"{user_history}\n\n"
-        f"--- PERCAKAPAN INVESTIGASI BERJALAN ---\n"
         f"{current_chat}\n"
         f"--- INSTRUKSI: JANGAN TANYA HAL YANG SUDAH ADA DI [JAWABAN PASIEN] DI ATAS! ---"
     )
@@ -169,7 +171,7 @@ async def triage_endpoint(data: TriageInput):
     # 4. Proses Investigasi AI & Paksa Follow-Up
     try:
         ai_res = parse_complaint_with_ai(
-            text=full_context_for_ai,
+            text=enhanced_context_for_ai, # MODIFIKASI: Mengirim konteks yang diperkuat
             age=data.age,
             is_risk=risk_group,
             duration=data.duration_hours,
@@ -219,7 +221,7 @@ async def triage_endpoint(data: TriageInput):
     search_text = f"{initial_complaint} {patient_answers}"
     
     symptoms = map_symptoms(search_text)
-    search_keys = symptoms + [ai_category] 
+    search_keys = symptoms + [ai_category]
     recommendations = get_otc_recommendations(search_keys) if triage_result != "MERAH" else []
 
     final_category = ai_category
