@@ -140,7 +140,7 @@ async def triage_endpoint(data: TriageInput):
     original_complaint = re.sub(r'^(Jawaban Pasien:|\[JAWABAN PASIEN\]:)\s*', '', raw_first_line, flags=re.IGNORECASE).strip()
     
     risk_group = is_risk_group(data.age, data.pregnant, data.comorbidity)
-    rule_danger_cat = detect_danger_category(original_complaint)
+    rule_danger_cat = detect_danger_category(data.complaint)
     manual_danger = data.danger_sign
 
     if data.duration_hours <= 0:
