@@ -14,35 +14,23 @@ export const useProfile = () => {
     setActiveUser(storage.getActiveUser());
   }, []);
 
-  const addProfile = async (nickname, nik) => {
-    setLoading(true);
-    setError(null);
-    try {
-      // 1. Simpan ke HP DULUAN agar user tidak merasa error
-      storage.saveProfile(nickname, nik);
-      
-      // 2. Coba sinkronisasi dengan Backend Render secara "silent"
-      // Jika server lambat, data sudah aman di HP user
-      try {
-        const response = await validateNik(nik);
-        if (response && response.age) {
-          // Update usia jika di database backend ternyata sudah ada data lama
-          storage.saveProfile(nickname, nik, response.age); 
-        }
-      } catch (silentErr) {
-        console.warn("Backend Render lambat, menggunakan data lokal.");
-      }
-      
-      // 3. Update tampilan daftar profil
-      setProfiles(storage.getProfiles());
-      return true;
-    } catch (err) {
-      setError("Gagal menyimpan profil.");
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
+// Di dalam src/hooks/useProfile.js
+// Cuplikan perbaikan logika di useProfile.js
+const addProfile = async (nickname, nik) => {
+  setLoading(true);
+  try {
+    const response = await validateNik(nik); 
+    const ageFromDb = response.age || 0; // MODIFIKASI: Ambil usia dari backend
+    storage.saveProfile(nickname, nik, ageFromDb); // MODIFIKASI: Simpan usia ke profil lokal
+    setProfiles(storage.getProfiles());
+    return true;
+  } catch (err) {
+    setError("Gagal validasi");
+    return false;
+  } finally {
+    setLoading(false);
+  }
+};
 
   const selectProfile = (profile) => {
     storage.setActiveUser(profile);

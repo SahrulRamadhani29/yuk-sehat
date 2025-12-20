@@ -141,8 +141,12 @@ def check_nik(nik: str, db: Session = Depends(get_db)):
 @app.post("/triage", response_model=TriageResponse)
 async def triage_endpoint(data: TriageInput):
     # 1. Inisialisasi Variabel Awal (Mencegah Error di Scope)
+    # MODIFIKASI: Ambil baris pertama keluhan untuk deteksi katalog agar tidak tertutup jawaban akhir "tidak"
+    original_complaint = data.complaint.split('\n')[0].replace("Jawaban Pasien: ", "").strip()
+    
     risk_group = is_risk_group(data.age, data.pregnant, data.comorbidity)
-    rule_danger_cat = detect_danger_category(data.complaint)
+    # MODIFIKASI: Gunakan original_complaint untuk deteksi katalog bahaya (Symptom Catalog)
+    rule_danger_cat = detect_danger_category(original_complaint)
     manual_danger = data.danger_sign
     symptoms = []
     
