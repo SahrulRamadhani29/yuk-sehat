@@ -30,8 +30,8 @@ const ChatPage = () => {
     { text: "Apa keluhan yang Anda rasakan saat ini?", isAi: true }
   ]);
 
-  const { messages: aiMessages, loading: aiLoading, isComplete, result, processTriage } = useTriage();
-  const allMessages = [...chatHistory, ...aiMessages];
+  const { loading: aiLoading, isComplete, result, processTriage } = useTriage();
+  const allMessages = chatHistory;
 
   useEffect(() => {
     const syncUserAge = async () => {
@@ -59,12 +59,12 @@ const ChatPage = () => {
   const handleUserReply = async (text) => {
     if (aiLoading || isCheckingDb) return;
 
-    // MODIFIKASI: Pengecekan step untuk menghindari duplikasi chat user
+    setChatHistory(prev => [...prev, { text, isAi: false }]);
+
     if (currentStep === 'ASK_COMPLAINT') {
-      setChatHistory(prev => [...prev, { text, isAi: false }]);
       const updatedData = { ...collectedData, complaint: text };
       setCollectedData(updatedData);
-      
+
       const hasDuration = /(jam|hari|minggu|bulan)/i.test(text);
       if (!hasDuration) {
         setCurrentStep('ASK_DURATION');
@@ -78,7 +78,6 @@ const ChatPage = () => {
       }
     }
     else if (currentStep === 'ASK_DURATION') {
-      setChatHistory(prev => [...prev, { text, isAi: false }]);
       if (collectedData.age === 0) {
         setCurrentStep('ASK_AGE');
         setTimeout(() => setChatHistory(prev => [...prev, { text: "Berapa Usia Anda saat ini?", isAi: true }]), 600);
@@ -88,23 +87,36 @@ const ChatPage = () => {
       }
     }
     else if (currentStep === 'ASK_AGE') {
-      setChatHistory(prev => [...prev, { text, isAi: false }]);
       const numAge = parseInt(text.replace(/[^0-9]/g, '')) || 0;
       setCollectedData(prev => ({ ...prev, age: numAge }));
       setCurrentStep('ASK_CONDITION');
       setTimeout(() => setChatHistory(prev => [...prev, { text: "Apakah Anda sedang hamil atau memiliki penyakit bawaan? (Ya/Tidak)", isAi: true }]), 600);
     } 
     else if (currentStep === 'ASK_CONDITION') {
-      // MODIFIKASI: Step ini dan selanjutnya tidak pakai setChatHistory lokal lagi karena ditangani hook
       const isSpec = text.toLowerCase().includes('ya');
       const finalData = { ...collectedData, pregnant: isSpec, comorbidity: isSpec };
       setCollectedData(finalData);
       setCurrentStep('AI_INVESTIGATION');
-      processTriage(text, finalData, []); 
+
+      const q = await processTriage(finalData.complaint, finalData, []);
+      if (q) {
+        setChatHistory(prev => [...prev, { text: q, isAi: true }]);
+      }
     }
-    else {
-      processTriage(text, collectedData, aiMessages);
-    }
+else {
+  // 🔥 SOLUSI: tambahkan jawaban user ke complaint
+  const updatedComplaint =
+    collectedData.complaint + "\nJawaban Pasien: " + text;
+
+  const updatedData = { ...collectedData, complaint: updatedComplaint };
+  setCollectedData(updatedData);
+
+  const q = await processTriage(updatedComplaint, updatedData, []);
+  if (q) {
+    setChatHistory(prev => [...prev, { text: q, isAi: true }]);
+  }
+}
+
   };
 
   return (
