@@ -124,7 +124,8 @@ SYMPTOM_MAP = {
         "mual hamil ringan", "muntah hamil ringan",
         "asi mampet", "puting nyeri",
         "ruam popok", "bayi rewel",
-        "anak susah makan"
+        "anak susah makan", "mual hamil", "asi mampet", 
+        "puting nyeri", "payudara bengkak menyusui", "mastitis"
     ],
 
     "mental": [
@@ -165,6 +166,23 @@ DANGER_CATEGORIES = {
         "dada sesak berat", "napas ngik", "napas berbunyi keras"
     ],
 
+    "pencernaan": [
+        "nyeri perut hebat", "perut keras seperti papan", "perut tegang",
+        "muntah darah", "muntah hitam seperti kopi",
+        "muntah terus tidak bisa minum", "muntah tidak berhenti",
+        "tidak bisa bab dan tidak bisa buang angin",
+        "perut melilit hebat sekali", "sakit perut tak tertahankan",
+        "keracunan makanan berat", "dehidrasi berat karena diare"
+    ],
+
+    "alergi": [
+        "syok anafilaktik", "reaksi alergi berat",
+        "bibir bengkak hebat", "mata bengkak besar",
+        "tenggorokan terasa menutup", "sesak setelah makan",
+        "sesak setelah minum obat", "seluruh badan merah dan bengkak",
+        "pingsan setelah disengat lebah"
+    ],
+    
     "sirkulasi_jantung": [
         "nyeri dada hebat", "nyeri dada kiri", "dada terasa ditekan",
         "dada seperti ditimpa", "dada seperti diremas",

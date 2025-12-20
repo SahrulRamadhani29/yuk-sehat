@@ -3,13 +3,11 @@ from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 
 # --- MODEL PEMBANTU ---
+# schemas.py
+
 class FollowUpQuestion(BaseModel):
-    """
-    Model untuk struktur pertanyaan dinamis.
-    Mendukung validasi objek JSON dari AI maupun sistem internal.
-    """
-    q: str = Field(..., description="Isi teks pertanyaan yang akan ditampilkan")
-    type: str = Field(..., description="Tipe input: 'number' (angka), 'boolean' (Ya/Tidak), atau 'string' (teks bebas)")
+    q: str = Field(..., description="Isi teks pertanyaan")
+    type: str = Field("string", description="Tipe input: Selalu gunakan 'string' untuk interaksi teks bebas")
 
 # --- INPUT SCHEMAS ---
 class TriageInput(BaseModel):

@@ -12,7 +12,7 @@ from schemas import TriageInput, TriageResponse
 # Import logika pendukung
 from rules import is_risk_group
 from symptom_catalog import detect_danger_category, map_symptoms
-from groq_ai import parse_complaint_with_ai
+from mistral_ai import parse_complaint_with_ai
 from otc_recommendation import get_otc_recommendations
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import desc
@@ -172,24 +172,29 @@ async def triage_endpoint(data: TriageInput):
     else:
         triage_result = "HIJAU"
 
-    # 5. Rekomendasi Obat & Kategori
-    symptoms = map_symptoms(data.complaint)
+    # 5. REKOMENDASI OBAT & KATEGORI (DIOPTIMALKAN)
+    patient_answers = " ".join(re.findall(r"Jawaban Pasien: (.*)", data.complaint))
+    initial_complaint = data.complaint.split("\n")[0]
+    search_text = f"{initial_complaint} {patient_answers}"
+
+    symptoms = map_symptoms(search_text) 
     search_keys = symptoms + [ai_category] 
     recommendations = get_otc_recommendations(search_keys) if triage_result != "MERAH" else []
-    final_category = ai_category if ai_category != "UMUM" else (rule_danger_cat or "UMUM")
+
+    # Perbaikan: Gunakan deteksi manual jika kategori AI tidak spesifik
+    final_category = ai_category
+    if final_category in ["UMUM", "umum_tidak_jelas"] and symptoms:
+        final_category = symptoms[0]
+    elif final_category in ["UMUM", "umum_tidak_jelas"]:
+        final_category = rule_danger_cat or "UMUM"
 
     # 6. Simpan Log
     save_triage_log(data, triage_result, is_immediate_danger, risk_group, final_category)
 
-    # --- PERBAIKAN: SESUAIKAN DENGAN STRUKTUR SCHEMAS & CLIENT ---
     return TriageResponse(
         status="COMPLETE",
         triage_result=triage_result,
         category=final_category,
         recommendation=recommendations,
-        # Mengirimkan objek ai_analysis untuk menghindari NoneType error di client
-        ai_analysis={
-            "urgency": ai_urgency,
-            "reason": ai_reason
-        }
+        ai_analysis={"urgency": ai_urgency, "reason": ai_reason}
     )

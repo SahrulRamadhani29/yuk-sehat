@@ -3,7 +3,7 @@ uvicorn
 sqlalchemy
 pydantic
 python-dotenv
-groq
+mistralai
 psycopg2-binary
 pytz
 requests
