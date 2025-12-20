@@ -332,15 +332,16 @@ MODERATE_RISK_KEYWORDS = [
     "lansia lemah", "orang tua lemas terus"
 ]
 
+# symptom_catalog.py -> detect_danger_category
 def detect_danger_category(complaint_text: str) -> Optional[str]:
     if not complaint_text: return None
     text = complaint_text.lower()
     
     for category, keywords in DANGER_CATEGORIES.items():
         for keyword in keywords:
-            # Menggunakan partial_ratio agar "gigitan ular" cocok dengan "digigit ular"
-            # Skor 85 adalah ambang batas kemiripan yang cukup aman
-            if fuzz.partial_ratio(keyword, text) > 85:
+            # MODIFIKASI: Gunakan token_set_ratio agar lebih akurat dan tidak asal tebak dari satu kata
+            # Skor 95 memastikan kecocokan harus sangat mendekati istilah bahaya aslinya
+            if fuzz.token_set_ratio(keyword, text) > 95:
                 return category
     return None
 

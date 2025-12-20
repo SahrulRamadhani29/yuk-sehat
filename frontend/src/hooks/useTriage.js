@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { submitTriage } from '../services/triageService';
+import { postTriage } from '../services/api';
 
 export const useTriage = () => {
   const [messages, setMessages] = useState([]); 
@@ -7,18 +7,14 @@ export const useTriage = () => {
   const [result, setResult] = useState(null); 
   const [isComplete, setIsComplete] = useState(false);
 
+// src/hooks/useTriage.js -> processTriage
   const processTriage = async (userInput, userData, currentHistory) => {
     setLoading(true);
-
     try {
-      // MODIFIKASI: Gunakan label "Investigasi:" agar sinkron dengan count_investigation_turns di main.py
-      const formattedHistory = currentHistory.map(m => (
-        m.isAi ? `Investigasi: ${m.text}` : `Jawaban Pasien: ${m.text}`
-      )).join("\n");
-
-      const finalComplaint = formattedHistory 
-        ? `${formattedHistory}\nJawaban Pasien: ${userInput}` 
-        : `Jawaban Pasien: ${userInput}`;
+      // MODIFIKASI: Pastikan baris pertama 100% murni tanpa label apapun
+      let finalComplaint = currentHistory.length === 0 
+        ? userInput 
+        : currentHistory.map(m => (m.isAi ? `Investigasi: ${m.text}` : `Jawaban Pasien: ${m.text}`)).join("\n") + `\nJawaban Pasien: ${userInput}`;
 
       const payload = {
         nik: userData.nik,
@@ -29,30 +25,25 @@ export const useTriage = () => {
         comorbidity: userData.comorbidity || false,
         danger_sign: userData.danger_sign || false
       };
+      // ... sisanya tetap
 
-      const data = await submitTriage(payload);
+      const data = await postTriage(payload);
 
       if (data.status === "COMPLETE") {
         setResult(data);
         setIsComplete(true);
       } else {
-        // Tambahkan pesan AI baru ke state messages dengan label Investigasi untuk turn berikutnya
         const aiQuestion = data.follow_up_questions[0]?.q || "Bisa jelaskan lebih lanjut?";
-        setMessages(prev => [...prev, { text: userInput, isAi: false }, { text: aiQuestion, isAi: true }]);
+        // MODIFIKASI: Hanya tambahkan pertanyaan AI, pesan user sudah ditambahkan di atas
+        setMessages(prev => [...prev, { text: aiQuestion, isAi: true }]);
       }
     } catch (error) {
       console.error("Triage Error:", error);
-      setMessages(prev => [...prev, { text: userInput, isAi: false }, { text: "Maaf, kendala koneksi.", isAi: true }]);
+      setMessages(prev => [...prev, { text: "Gagal memproses analisis.", isAi: true }]);
     } finally {
       setLoading(false);
     }
   };
 
-  const resetTriage = () => {
-    setMessages([]);
-    setResult(null);
-    setIsComplete(false);
-  };
-
-  return { messages, loading, result, isComplete, processTriage, resetTriage };
+  return { messages, loading, result, isComplete, processTriage };
 };
