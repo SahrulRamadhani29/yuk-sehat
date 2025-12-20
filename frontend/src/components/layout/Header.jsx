@@ -14,8 +14,7 @@ const Header = ({ nickname, onProfileClick }) => {
           />
         </div>
         <div>
-          <p className="text-gray-500 text-sm">Halo,</p>
-          <h2 className="text-xl font-bold text-gray-800">{nickname || 'Rama'}!</h2>
+          <h2 className="text-xl font-bold text-gray-800">Halo, {nickname || 'Rama'}!</h2>
         </div>
       </div>
       

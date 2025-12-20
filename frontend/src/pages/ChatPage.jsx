@@ -1,77 +1,135 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Container from '../components/layout/Container';
 import ChatBubble from '../components/chat/ChatBubble';
 import ChatInput from '../components/chat/ChatInput';
 import TypingIndicator from '../components/chat/TypingIndicator';
 import { useTriage } from '../hooks/useTriage';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, RefreshCw } from 'lucide-react';
 
 const ChatPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const scrollRef = useRef(null);
   
-  // Mengambil data awal dari HomePage
-  const initialData = location.state;
+  const activeProfile = location.state?.profile;
   
+  const [currentStep, setCurrentStep] = useState('ASK_AGE');
+  const [collectedData, setCollectedData] = useState({
+    nik: activeProfile?.nik || '',
+    age: '',
+    duration_hours: 0, // Inisialisasi 0 agar backend bisa mengekstrak dari teks jika perlu
+    pregnant: false,
+    comorbidity: false,
+    complaint: ''
+  });
+
+  const [chatHistory, setChatHistory] = useState([
+    { text: `Halo ${activeProfile?.nickname || 'Pasien'}, saya asisten AI Yuk Sehat. Mari kita mulai pemeriksaan. Berapa usia Anda saat ini? (Contoh: 25 atau 25 tahun)`, isAi: true }
+  ]);
+
   const { 
-    messages, 
-    loading, 
+    messages: aiMessages, 
+    loading: aiLoading, 
     isComplete, 
     result, 
     processTriage 
   } = useTriage();
 
-  // Jalankan analisis pertama kali saat halaman dibuka
+  const allMessages = [...chatHistory, ...aiMessages];
+
   useEffect(() => {
-    if (!initialData) {
-      navigate('/home');
+    if (!activeProfile) {
+      navigate('/');
       return;
     }
-    processTriage(initialData.complaint, initialData);
-  }, []);
+  }, [activeProfile, navigate]);
 
-  // Auto-scroll ke bawah saat ada pesan baru
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading]);
+  }, [allMessages, aiLoading]);
 
-  // Jika sudah COMPLETE, pindah ke halaman hasil
   useEffect(() => {
     if (isComplete && result) {
       navigate('/result', { state: result });
     }
   }, [isComplete, result, navigate]);
 
+  const handleUserReply = async (text) => {
+    setChatHistory(prev => [...prev, { text, isAi: false }]);
+
+    if (currentStep === 'ASK_AGE') {
+      // Backend akan memproses string ini melalui Regex
+      setCollectedData(prev => ({ ...prev, age: text })); 
+      setTimeout(() => {
+        setChatHistory(prev => [...prev, { text: "Sudah berapa lama Anda merasakan keluhan ini? (Contoh: 12 jam atau 2 hari)", isAi: true }]);
+        setCurrentStep('ASK_DURATION');
+      }, 800);
+    } 
+    else if (currentStep === 'ASK_DURATION') {
+      // Kita kirim string teks apa adanya agar diekstrak oleh extract_duration_from_text di Backend
+      setCollectedData(prev => ({ ...prev, duration_hours: text })); 
+      setTimeout(() => {
+        setChatHistory(prev => [...prev, { text: "Apakah Anda sedang hamil atau memiliki penyakit bawaan lahir? Jawab 'Ya' atau 'Tidak'.", isAi: true }]);
+        setCurrentStep('ASK_CONDITION');
+      }, 800);
+    }
+    else if (currentStep === 'ASK_CONDITION') {
+      const isSpecial = text.toLowerCase().includes('ya');
+      setCollectedData(prev => ({ ...prev, pregnant: isSpecial, comorbidity: isSpecial }));
+      setTimeout(() => {
+        setChatHistory(prev => [...prev, { text: "Terakhir, ceritakan detail keluhan yang Anda rasakan saat ini.", isAi: true }]);
+        setCurrentStep('ASK_COMPLAINT');
+      }, 800);
+    }
+    else if (currentStep === 'ASK_COMPLAINT') {
+      const finalPayload = { ...collectedData, complaint: text };
+      setCurrentStep('AI_PROCESSING');
+      processTriage(text, finalPayload); 
+    }
+    else {
+      processTriage(text, collectedData);
+    }
+  };
+
   return (
     <Container className="flex flex-col h-screen bg-white">
-      {/* Header Chat Ringkas */}
-      <div className="p-4 border-b border-gray-100 flex items-center gap-4 bg-white sticky top-0 z-10">
-        <button onClick={() => navigate('/home')} className="p-2 hover:bg-gray-50 rounded-full">
-          <ArrowLeft size={24} className="text-gray-600" />
-        </button>
-        <div>
-          <h2 className="font-bold text-gray-800">Investigasi Gejala</h2>
-          <p className="text-[10px] text-green-500 font-bold uppercase tracking-widest">AI Dokter Aktif</p>
+      <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
+        <div className="flex items-center gap-4">
+          <button onClick={() => navigate('/home')} className="p-2 hover:bg-gray-50 rounded-full">
+            <ArrowLeft size={24} className="text-gray-600" />
+          </button>
+          <div>
+            <h2 className="font-bold text-gray-800 text-lg">Sesi Konsultasi</h2>
+            <p className="text-[10px] text-blue-500 font-bold uppercase tracking-widest">
+              Pasien: {activeProfile?.nickname}
+            </p>
+          </div>
         </div>
+        {currentStep === 'AI_PROCESSING' && (
+          <RefreshCw size={18} className="text-blue-500 animate-spin" />
+        )}
       </div>
 
-      {/* Area Pesan Chat */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2">
-        {messages.map((msg, index) => (
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {allMessages.map((msg, index) => (
           <ChatBubble key={index} message={msg.text} isAi={msg.isAi} />
         ))}
-        
-        {loading && <TypingIndicator />}
+        {(aiLoading || currentStep === 'AI_PROCESSING') && <TypingIndicator />}
         <div ref={scrollRef} />
       </div>
 
-      {/* Input Jawaban */}
-      <div className="p-2">
+      <div className="p-4 bg-gray-50/50">
+        {/* PROPS inputType DIPAKSA 'text' AGAR USER BISA MENGETIK SATUAN */}
         <ChatInput 
-          onSend={(text) => processTriage(text, initialData)} 
-          disabled={loading || isComplete} 
+          onSend={handleUserReply} 
+          disabled={aiLoading || isComplete}
+          inputType="text" 
+          placeholder={
+            currentStep === 'ASK_AGE' ? "Contoh: 14 tahun..." :
+            currentStep === 'ASK_DURATION' ? "Contoh: 2 hari..." :
+            "Ketik jawaban di sini..."
+          }
         />
       </div>
     </Container>

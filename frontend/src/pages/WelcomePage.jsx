@@ -6,7 +6,7 @@ import AddProfileForm from '../components/profile/AddProfileForm';
 import Button from '../components/ui/Button';
 import { useProfile } from '../hooks/useProfile';
 import logo from '../assets/images/logo.png';
-import illustration from '../assets/images/illustration-welcome.png';
+// Import illustration dihapus karena tidak dipakai lagi
 import { Plus } from 'lucide-react';
 
 const WelcomePage = () => {
@@ -16,7 +16,7 @@ const WelcomePage = () => {
 
   const handleSelect = (profile) => {
     selectProfile(profile);
-    navigate('/home'); // Pindah ke Dashboard setelah pilih profil
+    navigate('/home'); 
   };
 
   const handleSaveProfile = async (nickname, nik) => {
@@ -26,23 +26,27 @@ const WelcomePage = () => {
 
   return (
     <Container className="p-6">
-      {/* Bagian Atas: Branding sesuai desain */}
-      <div className="flex flex-col items-center mt-10 mb-8">
-        <img src={logo} alt="Yuk Sehat" className="h-12 mb-4" />
-        <img src={illustration} alt="Health illustration" className="w-64 mb-6" />
+      {/* --- BAGIAN BRANDING (Hanya Logo Tunggal) --- */}
+      <div className="flex flex-col items-center mt-16 mb-12">
+        <img 
+          src={logo} 
+          alt="Yuk Sehat" 
+          className="w-45 h-auto mb-9 object-contain" 
+        />
+        
         <h1 className="text-2xl font-black text-gray-800 text-center">
-          Selamat Datang di <span className="text-blue-600">Yuk Sehat</span>
+          Selamat Datang di <span className="text-black-600">Yuk Sehat</span>
         </h1>
-        <p className="text-gray-500 text-center mt-2 px-4">
-          Pilih profil pasien atau tambah anggota keluarga untuk mulai triase.
+        <p className="text-gray-500 text-center mt-2 px-4 text-sm leading-relaxed">
+          Pilih profil pasien atau tambah anggota keluarga untuk mulai triase medis mandiri.
         </p>
       </div>
 
-      {/* Daftar Profil */}
-      <div className="flex-1 overflow-y-auto mb-20">
+      {/* --- DAFTAR PROFIL --- */}
+      <div className="flex-1 overflow-y-auto mb-20 px-1">
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-bold text-gray-700">Daftar Profil</h3>
-          <span className="text-xs text-blue-500 font-bold uppercase tracking-widest bg-blue-50 px-2 py-1 rounded-lg">
+          <span className="text-[10px] text-blue-500 font-bold uppercase tracking-widest bg-blue-50 px-2 py-1 rounded-lg">
             {profiles.length} Tersimpan
           </span>
         </div>
@@ -58,23 +62,23 @@ const WelcomePage = () => {
             />
           ))
         ) : (
-          <div className="text-center p-8 border-2 border-dashed border-gray-100 rounded-[32px] text-gray-400 text-sm">
-            Belum ada profil terdaftar di perangkat ini.
+          <div className="text-center p-10 border-2 border-dashed border-gray-100 rounded-[32px] text-gray-400 text-sm">
+            Belum ada profil terdaftar.<br/>Klik tombol di bawah untuk menambah.
           </div>
         )}
       </div>
 
-      {/* Tombol Tambah Profil */}
+      {/* --- TOMBOL AKSI --- */}
       {!showAddForm && (
         <div className="fixed bottom-8 w-full max-w-[432px] left-1/2 -translate-x-1/2 px-6">
           <Button fullWidth onClick={() => setShowAddForm(true)}>
-            <Plus size={20} />
+            <Plus size={20} className="mr-2" />
             Tambah Profil Baru
           </Button>
         </div>
       )}
 
-      {/* Form Overlay (Bottom Sheet Effect) */}
+      {/* --- OVERLAY FORM --- */}
       {showAddForm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex flex-col justify-end">
           <div className="animate-slide-up">
