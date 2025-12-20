@@ -6,7 +6,7 @@ const Dashboard = () => {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const API_BASE = import.meta.env.VITE_API_BASE_URL;
+const API_BASE = 'https://yuk-sehat.onrender.com';
 
   useEffect(() => {
     fetch(`${API_BASE}/triage-logs`)
@@ -90,6 +90,7 @@ const Dashboard = () => {
                   {new Date(p.created_at).toLocaleTimeString("id-ID", {
                     hour: "2-digit",
                     minute: "2-digit",
+                    timeZone: "Asia/Jakarta",
                   })} WIB
                 </span>
               </div>
